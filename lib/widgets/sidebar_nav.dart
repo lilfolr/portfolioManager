@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../theme/ledger_theme.dart';
 
 /// Fixed-width left sidebar: brand mark, portfolio nav, ledger-input nav,
@@ -38,17 +40,39 @@ class Sidebar extends StatelessWidget {
                 Container(
                   width: 24,
                   height: 24,
-                  decoration: BoxDecoration(color: LedgerColors.ink, borderRadius: BorderRadius.circular(5)),
+                  decoration: BoxDecoration(
+                    color: LedgerColors.ink,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
                   alignment: Alignment.center,
-                  child: Text('L', style: LedgerText.mono(size: 11, weight: FontWeight.w500, color: LedgerColors.surfacePage)),
+                  child: Text(
+                    'L',
+                    style: LedgerText.mono(
+                      size: 11,
+                      weight: FontWeight.w500,
+                      color: LedgerColors.surfacePage,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 10),
-                Text('Ledger', style: LedgerText.sans(size: 13, weight: FontWeight.w600, letterSpacing: -0.13)),
+                Text(
+                  'Ledger',
+                  style: LedgerText.sans(
+                    size: 13,
+                    weight: FontWeight.w600,
+                    letterSpacing: -0.13,
+                  ),
+                ),
               ],
             ),
           ),
           const _SidebarLabel('PORTFOLIO'),
-          _NavItem(label: 'Holdings', selected: isHoldings, onTap: onHoldings, bold: true),
+          _NavItem(
+            label: 'Holdings',
+            selected: isHoldings,
+            onTap: onHoldings,
+            bold: true,
+          ),
           _NavItem(
             label: 'holding detail',
             symbol: 'VAS',
@@ -60,41 +84,16 @@ class Sidebar extends StatelessWidget {
           _NavItem(label: 'Capital gains', selected: false, onTap: onOther),
           _NavItem(label: 'Property', selected: false, onTap: onOther),
           const _SidebarLabel('LEDGER INPUT'),
-          _NavItem(label: 'Import review', selected: false, onTap: onOther, badge: '7'),
+          _NavItem(
+            label: 'Import review',
+            selected: false,
+            onTap: onOther,
+            badge: '7',
+          ),
           _NavItem(label: 'Import sources', selected: false, onTap: onOther),
           _NavItem(label: 'Transaction entry', selected: false, onTap: onOther),
           const Spacer(),
-          Container(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
-            decoration: const BoxDecoration(border: Border(top: BorderSide(color: LedgerColors.borderSubtle))),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE7E3D9),
-                        border: Border.all(color: const Color(0xFFDCD7CB)),
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text('JD', style: LedgerText.mono(size: 9.5, weight: FontWeight.w500, color: LedgerColors.textMid, tabular: false)),
-                    ),
-                    const SizedBox(width: 8),
-                    Text('J. Devlin', style: LedgerText.sans(size: 12, color: LedgerColors.textMid)),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'All amounts AUD\nLedger current to 01 Aug 2026',
-                  style: LedgerText.mono(size: 10, color: LedgerColors.textFaint, height: 1.5, tabular: false),
-                ),
-              ],
-            ),
-          ),
+          const _UserFooter(),
         ],
       ),
     );
@@ -110,6 +109,101 @@ class _SidebarLabel extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
       child: Text(text, style: LedgerText.eyebrow()),
+    );
+  }
+}
+
+/// Signed-in user block: avatar initials + email derived from the Supabase
+/// session, plus sign-out. Replaces the previous hardcoded 'JD' / 'J. Devlin'
+/// placeholder.
+class _UserFooter extends StatelessWidget {
+  const _UserFooter();
+
+  String _initials(String email) {
+    final local = email.split('@').first;
+    if (local.isEmpty) return '?';
+    return local.length == 1
+        ? local.toUpperCase()
+        : local.substring(0, 2).toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Guard against Supabase not being initialized: widget tests pump
+    // [LedgerAppShell] directly (see test/widget_test.dart) without running
+    // main()'s Supabase.initialize(), so this must degrade gracefully rather
+    // than throw.
+    String email = 'signed in';
+    try {
+      email = Supabase.instance.client.auth.currentUser?.email ?? email;
+    } catch (_) {
+      // Not initialized (e.g. under test) — keep the fallback label.
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: LedgerColors.borderSubtle)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE7E3D9),
+                  border: Border.all(color: const Color(0xFFDCD7CB)),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  _initials(email),
+                  style: LedgerText.mono(
+                    size: 9.5,
+                    weight: FontWeight.w500,
+                    color: LedgerColors.textMid,
+                    tabular: false,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  email,
+                  overflow: TextOverflow.ellipsis,
+                  style: LedgerText.sans(size: 12, color: LedgerColors.textMid),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  try {
+                    Supabase.instance.client.auth.signOut();
+                  } catch (_) {
+                    // Not initialized (e.g. under test) — no-op.
+                  }
+                },
+                child: Text(
+                  'Sign out',
+                  style: LedgerText.sans(size: 11.5, color: LedgerColors.link),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'All amounts AUD\nLedger current to 01 Aug 2026',
+            style: LedgerText.mono(
+              size: 10,
+              color: LedgerColors.textFaint,
+              height: 1.5,
+              tabular: false,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -150,7 +244,12 @@ class _NavItemState extends State<_NavItem> {
         onTap: widget.onTap,
         child: Container(
           color: _hover ? const Color(0xFFF1EFE9) : Colors.transparent,
-          padding: EdgeInsets.fromLTRB(widget.indent ? 30 : 18, widget.indent ? 7 : 8, 18, widget.indent ? 7 : 8),
+          padding: EdgeInsets.fromLTRB(
+            widget.indent ? 30 : 18,
+            widget.indent ? 7 : 8,
+            18,
+            widget.indent ? 7 : 8,
+          ),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -164,13 +263,23 @@ class _NavItemState extends State<_NavItem> {
               Row(
                 children: [
                   if (widget.symbol != null) ...[
-                    Text(widget.symbol!, style: LedgerText.mono(size: 11.5, color: LedgerColors.textStrong)),
+                    Text(
+                      widget.symbol!,
+                      style: LedgerText.mono(
+                        size: 11.5,
+                        color: LedgerColors.textStrong,
+                      ),
+                    ),
                     const SizedBox(width: 9),
                     Flexible(
                       child: Text(
                         widget.label,
                         overflow: TextOverflow.ellipsis,
-                        style: LedgerText.sans(size: 12.5, color: LedgerColors.textMuted, tabular: false),
+                        style: LedgerText.sans(
+                          size: 12.5,
+                          color: LedgerColors.textMuted,
+                          tabular: false,
+                        ),
                       ),
                     ),
                   ] else
@@ -179,7 +288,9 @@ class _NavItemState extends State<_NavItem> {
                         widget.label,
                         style: LedgerText.sans(
                           size: 13,
-                          weight: widget.bold ? FontWeight.w500 : FontWeight.w400,
+                          weight: widget.bold
+                              ? FontWeight.w500
+                              : FontWeight.w400,
                           color: LedgerColors.textStrong,
                           tabular: false,
                         ),
@@ -187,13 +298,25 @@ class _NavItemState extends State<_NavItem> {
                     ),
                   if (widget.badge != null)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFE9EAF2),
                         border: Border.all(color: const Color(0xFFD3D7E6)),
                         borderRadius: BorderRadius.circular(9),
                       ),
-                      child: Text(widget.badge!, style: LedgerText.mono(size: 10, weight: FontWeight.w500, color: LedgerColors.link, height: 1.5, tabular: false)),
+                      child: Text(
+                        widget.badge!,
+                        style: LedgerText.mono(
+                          size: 10,
+                          weight: FontWeight.w500,
+                          color: LedgerColors.link,
+                          height: 1.5,
+                          tabular: false,
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -243,7 +366,12 @@ class MobileNavChips extends StatelessWidget {
     );
   }
 
-  Widget _chip(String label, VoidCallback onTap, {bool bold = false, bool muted = false}) {
+  Widget _chip(
+    String label,
+    VoidCallback onTap, {
+    bool bold = false,
+    bool muted = false,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -255,7 +383,11 @@ class MobileNavChips extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: LedgerText.sans(size: 12, weight: bold ? FontWeight.w500 : FontWeight.w400, color: muted ? LedgerColors.textMid : LedgerColors.textStrong),
+          style: LedgerText.sans(
+            size: 12,
+            weight: bold ? FontWeight.w500 : FontWeight.w400,
+            color: muted ? LedgerColors.textMid : LedgerColors.textStrong,
+          ),
         ),
       ),
     );

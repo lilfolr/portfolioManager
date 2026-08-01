@@ -43,7 +43,16 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
   bool _color = true;
   bool _byHolding = true;
 
-  static const _colWidths = [82.0, 100.0, 92.0, 124.0, 128.0, 84.0, 168.0, 30.0];
+  static const _colWidths = [
+    82.0,
+    100.0,
+    92.0,
+    124.0,
+    128.0,
+    84.0,
+    168.0,
+    30.0,
+  ];
   static const _tableMinWidth = 1120.0;
 
   void _sortBy(_SortKey key) {
@@ -57,8 +66,9 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
     });
   }
 
-  List<Holding> get _filtered =>
-      SampleData.holdings.where((h) => _src == 'all' || h.source.startsWith(_src)).toList();
+  List<Holding> get _filtered => SampleData.holdings
+      .where((h) => _src == 'all' || h.source.startsWith(_src))
+      .toList();
 
   List<Holding> _sorted(List<Holding> list) {
     final sorted = [...list];
@@ -108,11 +118,15 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
         final gv = g.fold<double>(0, (s, h) => s + h.value);
         final gc = g.fold<double>(0, (s, h) => s + h.cost);
         for (var i = 0; i < g.length; i++) {
-          rows.add(_Row(
-            g[i],
-            groupHead: i == 0 ? key.toUpperCase() : null,
-            groupMeta: i == 0 ? '${g.length} positions · value ${money(gv)} · cost base ${money(gc)}' : null,
-          ));
+          rows.add(
+            _Row(
+              g[i],
+              groupHead: i == 0 ? key.toUpperCase() : null,
+              groupMeta: i == 0
+                  ? '${g.length} positions · value ${money(gv)} · cost base ${money(gc)}'
+                  : null,
+            ),
+          );
         }
       }
     } else {
@@ -124,12 +138,16 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
     final tValue = filtered.fold<double>(0, (s, h) => s + h.value);
     final tCost = filtered.fold<double>(0, (s, h) => s + h.cost);
     final tGain = tValue - tCost;
-    final tGainColor = _color ? (tGain >= 0 ? LedgerColors.positive : LedgerColors.negative) : LedgerColors.ink;
+    final tGainColor = _color
+        ? (tGain >= 0 ? LedgerColors.positive : LedgerColors.negative)
+        : LedgerColors.ink;
 
     // Composition segments.
     List<CompositionSegment> segments;
     if (_byHolding) {
-      final total = filtered.fold<double>(0, (s, h) => s + h.value) == 0 ? 1.0 : filtered.fold<double>(0, (s, h) => s + h.value);
+      final total = filtered.fold<double>(0, (s, h) => s + h.value) == 0
+          ? 1.0
+          : filtered.fold<double>(0, (s, h) => s + h.value);
       final list = [...filtered]..sort((a, b) => b.value.compareTo(a.value));
       segments = [
         for (var i = 0; i < list.length; i++)
@@ -147,8 +165,11 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
       for (final h in filtered) {
         agg[h.source] = (agg[h.source] ?? 0) + h.value;
       }
-      final total = agg.values.fold<double>(0, (s, v) => s + v) == 0 ? 1.0 : agg.values.fold<double>(0, (s, v) => s + v);
-      final entries = agg.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+      final total = agg.values.fold<double>(0, (s, v) => s + v) == 0
+          ? 1.0
+          : agg.values.fold<double>(0, (s, v) => s + v);
+      final entries = agg.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
       segments = [
         for (final e in entries)
           CompositionSegment(
@@ -162,8 +183,12 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
       ];
     }
     final segTotal = segments.fold<double>(0, (s, e) => s + e.value);
-    final top3 = segments.take(3).fold<double>(0, (s, e) => s + e.value) / (segTotal == 0 ? 1 : segTotal) * 100;
-    final defaultCaption = 'largest 3 = ${top3.toStringAsFixed(1)}% of value · ${segments.length} segments';
+    final top3 =
+        segments.take(3).fold<double>(0, (s, e) => s + e.value) /
+        (segTotal == 0 ? 1 : segTotal) *
+        100;
+    final defaultCaption =
+        'largest 3 = ${top3.toStringAsFixed(1)}% of value · ${segments.length} segments';
 
     final hPad = widget.horizontalPadding;
     final kpiCols = widget.narrow ? 1 : (widget.wide ? 4 : 2);
@@ -186,10 +211,23 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('Holdings', style: LedgerText.sans(size: 22, weight: FontWeight.w600, letterSpacing: -0.33)),
+                      Text(
+                        'Holdings',
+                        style: LedgerText.sans(
+                          size: 22,
+                          weight: FontWeight.w600,
+                          letterSpacing: -0.33,
+                        ),
+                      ),
                       const SizedBox(height: 6),
-                      Text('9 positions · 5 source accounts · prices as at 01 Aug 2026, 16:10 AEST',
-                          style: LedgerText.mono(size: 12, color: LedgerColors.textMuted, tabular: false)),
+                      Text(
+                        '9 positions · 5 source accounts · prices as at 01 Aug 2026, 16:10 AEST',
+                        style: LedgerText.mono(
+                          size: 12,
+                          color: LedgerColors.textMuted,
+                          tabular: false,
+                        ),
+                      ),
                     ],
                   ),
                   Row(
@@ -234,7 +272,10 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _SourceFilterRow(current: _src, onSelect: (k) => setState(() => _src = k)),
+                  _SourceFilterRow(
+                    current: _src,
+                    onSelect: (k) => setState(() => _src = k),
+                  ),
                   _ToggleButton(
                     label: _group ? 'Grouped by source' : 'Group by source',
                     active: _group,
@@ -249,36 +290,63 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
               ),
             ),
             Container(
-              decoration: const BoxDecoration(border: Border(top: BorderSide(color: LedgerColors.borderSidebar))),
+              decoration: const BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: LedgerColors.borderSidebar),
+                ),
+              ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: LayoutBuilder(builder: (context, constraints) {
-                  final fixedSum = _colWidths.fold<double>(0, (s, w) => s + w);
-                  final avail = MediaQuery.of(context).size.width - hPad * 2 - (widget.wide ? 226 : 0);
-                  final symWidth = (avail - fixedSum).clamp(190.0, double.infinity);
-                  final totalWidth = symWidth + fixedSum;
-                  return SizedBox(
-                    key: const Key('holdingsTable'),
-                    width: totalWidth < _tableMinWidth ? _tableMinWidth : totalWidth,
-                    child: Column(
-                      children: [
-                        _HeaderRow(symWidth: symWidth < 190 ? 190 : symWidth, sortKey: _sortKey, desc: _desc, onSort: _sortBy),
-                        for (final r in rows)
-                          _DataRow(row: r, symWidth: symWidth < 190 ? 190 : symWidth, color: _color, onTap: widget.onOpenDetail),
-                        _TotalsRow(
-                          symWidth: symWidth < 190 ? 190 : symWidth,
-                          rowCount: rows.where((r) => true).length,
-                          positionCount: filtered.length,
-                          tValue: money(tValue),
-                          tGain: signedMoney(tGain),
-                          tGainPct: signedPct(tGain / tCost * 100),
-                          tGainColor: tGainColor,
-                          tCost: money(tCost),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final fixedSum = _colWidths.fold<double>(
+                      0,
+                      (s, w) => s + w,
+                    );
+                    final avail =
+                        MediaQuery.of(context).size.width -
+                        hPad * 2 -
+                        (widget.wide ? 226 : 0);
+                    final symWidth = (avail - fixedSum).clamp(
+                      190.0,
+                      double.infinity,
+                    );
+                    final totalWidth = symWidth + fixedSum;
+                    return SizedBox(
+                      key: const Key('holdingsTable'),
+                      width: totalWidth < _tableMinWidth
+                          ? _tableMinWidth
+                          : totalWidth,
+                      child: Column(
+                        children: [
+                          _HeaderRow(
+                            symWidth: symWidth < 190 ? 190 : symWidth,
+                            sortKey: _sortKey,
+                            desc: _desc,
+                            onSort: _sortBy,
+                          ),
+                          for (final r in rows)
+                            _DataRow(
+                              row: r,
+                              symWidth: symWidth < 190 ? 190 : symWidth,
+                              color: _color,
+                              onTap: widget.onOpenDetail,
+                            ),
+                          _TotalsRow(
+                            symWidth: symWidth < 190 ? 190 : symWidth,
+                            rowCount: rows.where((r) => true).length,
+                            positionCount: filtered.length,
+                            tValue: money(tValue),
+                            tGain: signedMoney(tGain),
+                            tGainPct: signedPct(tGain / tCost * 100),
+                            tGainColor: tGainColor,
+                            tCost: money(tCost),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
             Padding(
@@ -287,10 +355,24 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                 spacing: 22,
                 runSpacing: 6,
                 children: [
-                  Text('Cost base includes brokerage and is derived from confirmed transactions only.',
-                      style: LedgerText.mono(size: 11, color: LedgerColors.textFaint, height: 1.6, tabular: false)),
-                  Text('VOO held in USD · converted at 0.6538 (01 Aug 2026); trade-date rates retained per parcel.',
-                      style: LedgerText.mono(size: 11, color: LedgerColors.textFaint, height: 1.6, tabular: false)),
+                  Text(
+                    'Cost base includes brokerage and is derived from confirmed transactions only.',
+                    style: LedgerText.mono(
+                      size: 11,
+                      color: LedgerColors.textFaint,
+                      height: 1.6,
+                      tabular: false,
+                    ),
+                  ),
+                  Text(
+                    'VOO held in USD · converted at 0.6538 (01 Aug 2026); trade-date rates retained per parcel.',
+                    style: LedgerText.mono(
+                      size: 11,
+                      color: LedgerColors.textFaint,
+                      height: 1.6,
+                      tabular: false,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -324,10 +406,34 @@ class KpiStripCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cards = [
-      _Kpi('TOTAL VALUE', tValue, '9 positions · 2,727 units', LedgerColors.ink, null),
-      _Kpi('TOTAL COST BASE', tCost, 'from 38 confirmed transactions', LedgerColors.ink, null),
-      _Kpi('UNREALISED GAIN', tGain, 'not adjusted for CGT discount', tGainColor, tGainPct),
-      _Kpi('INCOME · $fy', '6,412.88', '+ 1,586.28 franking credits', LedgerColors.ink, null),
+      _Kpi(
+        'TOTAL VALUE',
+        tValue,
+        '9 positions · 2,727 units',
+        LedgerColors.ink,
+        null,
+      ),
+      _Kpi(
+        'TOTAL COST BASE',
+        tCost,
+        'from 38 confirmed transactions',
+        LedgerColors.ink,
+        null,
+      ),
+      _Kpi(
+        'UNREALISED GAIN',
+        tGain,
+        'not adjusted for CGT discount',
+        tGainColor,
+        tGainPct,
+      ),
+      _Kpi(
+        'INCOME · $fy',
+        '6,412.88',
+        '+ 1,586.28 franking credits',
+        LedgerColors.ink,
+        null,
+      ),
     ];
 
     final rows = <List<_Kpi>>[];
@@ -350,9 +456,16 @@ class KpiStripCards extends StatelessWidget {
                 for (var i = 0; i < row.length; i++)
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
-                        border: i != row.length - 1 ? const Border(right: BorderSide(color: Color(0xFFECE8DF))) : null,
+                        border: i != row.length - 1
+                            ? const Border(
+                                right: BorderSide(color: Color(0xFFECE8DF)),
+                              )
+                            : null,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,16 +480,37 @@ class KpiStripCards extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.baseline,
                               textBaseline: TextBaseline.alphabetic,
                               children: [
-                                Text(row[i].value, style: LedgerText.mono(size: 23, color: row[i].color, letterSpacing: -0.46)),
+                                Text(
+                                  row[i].value,
+                                  style: LedgerText.mono(
+                                    size: 23,
+                                    color: row[i].color,
+                                    letterSpacing: -0.46,
+                                  ),
+                                ),
                                 if (row[i].trailing != null) ...[
                                   const SizedBox(width: 8),
-                                  Text(row[i].trailing!, style: LedgerText.mono(size: 12.5, color: row[i].color, tabular: false)),
+                                  Text(
+                                    row[i].trailing!,
+                                    style: LedgerText.mono(
+                                      size: 12.5,
+                                      color: row[i].color,
+                                      tabular: false,
+                                    ),
+                                  ),
                                 ],
                               ],
                             ),
                           ),
                           const SizedBox(height: 6),
-                          Text(row[i].caption, style: LedgerText.sans(size: 11, color: LedgerColors.textMuted, height: 1.3)),
+                          Text(
+                            row[i].caption,
+                            style: LedgerText.sans(
+                              size: 11,
+                              color: LedgerColors.textMuted,
+                              height: 1.3,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -411,7 +545,9 @@ class _ActionButton extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: primary ? LedgerColors.ink : Colors.white,
-        border: Border.all(color: primary ? LedgerColors.ink : LedgerColors.borderButton),
+        border: Border.all(
+          color: primary ? LedgerColors.ink : LedgerColors.borderButton,
+        ),
         borderRadius: BorderRadius.circular(5),
       ),
       child: Text(
@@ -446,18 +582,27 @@ class _SourceFilterRow extends StatelessWidget {
             GestureDetector(
               onTap: () => onSelect(SampleData.sourceFilters[i].key),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 11,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: current == SampleData.sourceFilters[i].key ? LedgerColors.surfaceActive : Colors.white,
+                  color: current == SampleData.sourceFilters[i].key
+                      ? LedgerColors.surfaceActive
+                      : Colors.white,
                   border: i != SampleData.sourceFilters.length - 1
-                      ? const Border(right: BorderSide(color: Color(0xFFECE8DF)))
+                      ? const Border(
+                          right: BorderSide(color: Color(0xFFECE8DF)),
+                        )
                       : null,
                 ),
                 child: Text(
                   SampleData.sourceFilters[i].value,
                   style: LedgerText.sans(
                     size: 12,
-                    color: current == SampleData.sourceFilters[i].key ? LedgerColors.ink : LedgerColors.textMid,
+                    color: current == SampleData.sourceFilters[i].key
+                        ? LedgerColors.ink
+                        : LedgerColors.textMid,
                   ),
                 ),
               ),
@@ -469,7 +614,11 @@ class _SourceFilterRow extends StatelessWidget {
 }
 
 class _ToggleButton extends StatelessWidget {
-  const _ToggleButton({required this.label, required this.active, required this.onTap});
+  const _ToggleButton({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
   final String label;
   final bool active;
   final VoidCallback onTap;
@@ -487,14 +636,22 @@ class _ToggleButton extends StatelessWidget {
           border: Border.all(color: LedgerColors.borderControl),
           borderRadius: BorderRadius.circular(5),
         ),
-        child: Text(label, style: LedgerText.sans(size: 12, color: LedgerColors.textStrong)),
+        child: Text(
+          label,
+          style: LedgerText.sans(size: 12, color: LedgerColors.textStrong),
+        ),
       ),
     );
   }
 }
 
 class _HeaderRow extends StatelessWidget {
-  const _HeaderRow({required this.symWidth, required this.sortKey, required this.desc, required this.onSort});
+  const _HeaderRow({
+    required this.symWidth,
+    required this.sortKey,
+    required this.desc,
+    required this.onSort,
+  });
   final double symWidth;
   final _SortKey sortKey;
   final bool desc;
@@ -502,7 +659,12 @@ class _HeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget cell(String label, double width, _SortKey key, {bool alignRight = false}) {
+    Widget cell(
+      String label,
+      double width,
+      _SortKey key, {
+      bool alignRight = false,
+    }) {
       final active = sortKey == key;
       return GestureDetector(
         onTap: () => onSort(key),
@@ -512,12 +674,23 @@ class _HeaderRow extends StatelessWidget {
           alignment: alignRight ? Alignment.centerRight : Alignment.centerLeft,
           child: FittedBox(
             fit: BoxFit.scaleDown,
-            alignment: alignRight ? Alignment.centerRight : Alignment.centerLeft,
+            alignment: alignRight
+                ? Alignment.centerRight
+                : Alignment.centerLeft,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(label, style: LedgerText.columnLabel()),
-                if (active) Text(desc ? ' ↓' : ' ↑', style: LedgerText.mono(size: 9.5, weight: FontWeight.w500, color: LedgerColors.link, tabular: false)),
+                if (active)
+                  Text(
+                    desc ? ' ↓' : ' ↑',
+                    style: LedgerText.mono(
+                      size: 9.5,
+                      weight: FontWeight.w500,
+                      color: LedgerColors.link,
+                      tabular: false,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -528,7 +701,9 @@ class _HeaderRow extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: LedgerColors.surfaceTable,
-        border: Border(bottom: BorderSide(color: LedgerColors.borderHeaderRule)),
+        border: Border(
+          bottom: BorderSide(color: LedgerColors.borderHeaderRule),
+        ),
       ),
       child: Row(
         children: [
@@ -548,7 +723,12 @@ class _HeaderRow extends StatelessWidget {
 }
 
 class _DataRow extends StatelessWidget {
-  const _DataRow({required this.row, required this.symWidth, required this.color, required this.onTap});
+  const _DataRow({
+    required this.row,
+    required this.symWidth,
+    required this.color,
+    required this.onTap,
+  });
   final _Row row;
   final double symWidth;
   final bool color;
@@ -557,7 +737,9 @@ class _DataRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final h = row.holding;
-    final gc = color ? (h.gain >= 0 ? LedgerColors.positive : LedgerColors.negative) : LedgerColors.ink;
+    final gc = color
+        ? (h.gain >= 0 ? LedgerColors.positive : LedgerColors.negative)
+        : LedgerColors.ink;
 
     return Column(
       children: [
@@ -566,43 +748,87 @@ class _DataRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
             decoration: const BoxDecoration(
               color: LedgerColors.surfaceGroupHead,
-              border: Border(bottom: BorderSide(color: LedgerColors.borderSubtle)),
+              border: Border(
+                bottom: BorderSide(color: LedgerColors.borderSubtle),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(row.groupHead!, style: LedgerText.mono(size: 10.5, weight: FontWeight.w500, color: LedgerColors.textMid, letterSpacing: 0.8, tabular: false)),
-                Text(row.groupMeta!, style: LedgerText.mono(size: 11, color: LedgerColors.textMuted, tabular: false)),
+                Text(
+                  row.groupHead!,
+                  style: LedgerText.mono(
+                    size: 10.5,
+                    weight: FontWeight.w500,
+                    color: LedgerColors.textMid,
+                    letterSpacing: 0.8,
+                    tabular: false,
+                  ),
+                ),
+                Text(
+                  row.groupMeta!,
+                  style: LedgerText.mono(
+                    size: 11,
+                    color: LedgerColors.textMuted,
+                    tabular: false,
+                  ),
+                ),
               ],
             ),
           ),
         GestureDetector(
           onTap: onTap,
           child: Container(
-            decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: LedgerColors.borderRow))),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: LedgerColors.borderRow)),
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(
                   width: symWidth,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 9,
+                    ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
-                        Text(h.sym, style: LedgerText.mono(size: 12.5, letterSpacing: 0.12)),
+                        Text(
+                          h.sym,
+                          style: LedgerText.mono(
+                            size: 12.5,
+                            letterSpacing: 0.12,
+                          ),
+                        ),
                         const SizedBox(width: 9),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(h.name, overflow: TextOverflow.ellipsis, style: LedgerText.sans(size: 12.5, height: 1.35)),
+                              Text(
+                                h.name,
+                                overflow: TextOverflow.ellipsis,
+                                style: LedgerText.sans(
+                                  size: 12.5,
+                                  height: 1.35,
+                                ),
+                              ),
                               if (h.sub != null)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 2),
-                                  child: Text(h.sub!, overflow: TextOverflow.ellipsis, style: LedgerText.mono(size: 10.5, color: LedgerColors.textFaint, tabular: false)),
+                                  child: Text(
+                                    h.sub!,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: LedgerText.mono(
+                                      size: 10.5,
+                                      color: LedgerColors.textFaint,
+                                      tabular: false,
+                                    ),
+                                  ),
                                 ),
                             ],
                           ),
@@ -620,13 +846,26 @@ class _DataRow extends StatelessWidget {
                 SizedBox(
                   width: 168,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                    child: SourceDotChip(label: h.source, dotColor: LedgerColors.sourceDot(h.source)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 9,
+                    ),
+                    child: SourceDotChip(
+                      label: h.source,
+                      dotColor: LedgerColors.sourceDot(h.source),
+                    ),
                   ),
                 ),
                 SizedBox(
                   width: 30,
-                  child: Text('›', textAlign: TextAlign.center, style: LedgerText.mono(size: 13, color: const Color(0xFFBDB7A9))),
+                  child: Text(
+                    '›',
+                    textAlign: TextAlign.center,
+                    style: LedgerText.mono(
+                      size: 13,
+                      color: const Color(0xFFBDB7A9),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -636,12 +875,21 @@ class _DataRow extends StatelessWidget {
     );
   }
 
-  Widget _num(String text, double width, {Color color = LedgerColors.textStrong, double size = 12.5}) {
+  Widget _num(
+    String text,
+    double width, {
+    Color color = LedgerColors.textStrong,
+    double size = 12.5,
+  }) {
     return SizedBox(
       width: width,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-        child: Text(text, textAlign: TextAlign.right, style: LedgerText.mono(size: size, color: color)),
+        child: Text(
+          text,
+          textAlign: TextAlign.right,
+          style: LedgerText.mono(size: size, color: color),
+        ),
       ),
     );
   }
@@ -673,7 +921,9 @@ class _TotalsRow extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: LedgerColors.surfaceTable,
-        border: Border(top: BorderSide(color: LedgerColors.borderTotalRule, width: 1.5)),
+        border: Border(
+          top: BorderSide(color: LedgerColors.borderTotalRule, width: 1.5),
+        ),
       ),
       child: Row(
         children: [
@@ -681,7 +931,16 @@ class _TotalsRow extends StatelessWidget {
             width: symWidth,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Text('TOTAL · $positionCount POSITIONS', style: LedgerText.mono(size: 11, weight: FontWeight.w500, color: LedgerColors.textMid, letterSpacing: 0.9, tabular: false)),
+              child: Text(
+                'TOTAL · $positionCount POSITIONS',
+                style: LedgerText.mono(
+                  size: 11,
+                  weight: FontWeight.w500,
+                  color: LedgerColors.textMid,
+                  letterSpacing: 0.9,
+                  tabular: false,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 82),
@@ -691,28 +950,55 @@ class _TotalsRow extends StatelessWidget {
             width: 124,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Text(tValue, textAlign: TextAlign.right, style: LedgerText.mono(size: 13, weight: FontWeight.w500)),
+              child: Text(
+                tValue,
+                textAlign: TextAlign.right,
+                style: LedgerText.mono(size: 13, weight: FontWeight.w500),
+              ),
             ),
           ),
           SizedBox(
             width: 128,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Text(tGain, textAlign: TextAlign.right, style: LedgerText.mono(size: 13, weight: FontWeight.w500, color: tGainColor)),
+              child: Text(
+                tGain,
+                textAlign: TextAlign.right,
+                style: LedgerText.mono(
+                  size: 13,
+                  weight: FontWeight.w500,
+                  color: tGainColor,
+                ),
+              ),
             ),
           ),
           SizedBox(
             width: 84,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Text(tGainPct, textAlign: TextAlign.right, style: LedgerText.mono(size: 12.5, weight: FontWeight.w500, color: tGainColor)),
+              child: Text(
+                tGainPct,
+                textAlign: TextAlign.right,
+                style: LedgerText.mono(
+                  size: 12.5,
+                  weight: FontWeight.w500,
+                  color: tGainColor,
+                ),
+              ),
             ),
           ),
           SizedBox(
             width: 168,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Text('cost base $tCost', style: LedgerText.mono(size: 11, color: LedgerColors.textFaint, tabular: false)),
+              child: Text(
+                'cost base $tCost',
+                style: LedgerText.mono(
+                  size: 11,
+                  color: LedgerColors.textFaint,
+                  tabular: false,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 30),

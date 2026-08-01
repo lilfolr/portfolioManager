@@ -19,12 +19,24 @@ class NotInPassScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Not in this pass', textAlign: TextAlign.center, style: LedgerText.sans(size: 13, weight: FontWeight.w500, height: 1.4)),
+              Text(
+                'Not in this pass',
+                textAlign: TextAlign.center,
+                style: LedgerText.sans(
+                  size: 13,
+                  weight: FontWeight.w500,
+                  height: 1.4,
+                ),
+              ),
               const SizedBox(height: 8),
               Text(
                 'This hi-fi pass covers the holdings dashboard and holding detail. The other seven screens exist as wireframes.',
                 textAlign: TextAlign.center,
-                style: LedgerText.sans(size: 12, color: LedgerColors.textMid, height: 1.6),
+                style: LedgerText.sans(
+                  size: 12,
+                  color: LedgerColors.textMid,
+                  height: 1.6,
+                ),
               ),
               const SizedBox(height: 16),
               GestureDetector(
@@ -38,7 +50,10 @@ class NotInPassScreen extends StatelessWidget {
                     border: Border.all(color: LedgerColors.borderButton),
                     borderRadius: BorderRadius.circular(5),
                   ),
-                  child: Text('Back to holdings', style: LedgerText.sans(size: 12.5)),
+                  child: Text(
+                    'Back to holdings',
+                    style: LedgerText.sans(size: 12.5),
+                  ),
                 ),
               ),
             ],

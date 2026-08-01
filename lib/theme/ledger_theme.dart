@@ -126,10 +126,22 @@ class LedgerText {
   }
 
   /// Column-header label style, e.g. "MARKET VALUE".
-  static TextStyle columnLabel({Color color = LedgerColors.textMuted}) =>
-      mono(size: 9.5, weight: FontWeight.w500, color: color, letterSpacing: 1.1, height: 1.3, tabular: false);
+  static TextStyle columnLabel({Color color = LedgerColors.textMuted}) => mono(
+    size: 9.5,
+    weight: FontWeight.w500,
+    color: color,
+    letterSpacing: 1.1,
+    height: 1.3,
+    tabular: false,
+  );
 
   /// Section eyebrow label, e.g. "TOTAL VALUE".
-  static TextStyle eyebrow({Color color = LedgerColors.textFaint}) =>
-      mono(size: 9.5, weight: FontWeight.w500, color: color, letterSpacing: 1.05, height: 1, tabular: false);
+  static TextStyle eyebrow({Color color = LedgerColors.textFaint}) => mono(
+    size: 9.5,
+    weight: FontWeight.w500,
+    color: color,
+    letterSpacing: 1.05,
+    height: 1,
+    tabular: false,
+  );
 }

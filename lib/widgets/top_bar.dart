@@ -23,7 +23,10 @@ class TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10),
+      padding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: 10,
+      ),
       decoration: const BoxDecoration(
         color: LedgerColors.surfaceTopBar,
         border: Border(bottom: BorderSide(color: LedgerColors.borderSubtle)),
@@ -34,7 +37,12 @@ class TopBar extends StatelessWidget {
             child: Text(
               crumb,
               overflow: TextOverflow.ellipsis,
-              style: LedgerText.mono(size: 11.5, color: LedgerColors.textMuted, height: 1.3, tabular: false),
+              style: LedgerText.mono(
+                size: 11.5,
+                color: LedgerColors.textMuted,
+                height: 1.3,
+                tabular: false,
+              ),
             ),
           ),
           if (showSearch) ...[
@@ -52,7 +60,10 @@ class TopBar extends StatelessWidget {
                     width: 9,
                     height: 9,
                     decoration: BoxDecoration(
-                      border: Border.all(color: LedgerColors.textFaint, width: 1.5),
+                      border: Border.all(
+                        color: LedgerColors.textFaint,
+                        width: 1.5,
+                      ),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -61,10 +72,20 @@ class TopBar extends StatelessWidget {
                     child: Text(
                       'Search symbol, parcel, txn id',
                       overflow: TextOverflow.ellipsis,
-                      style: LedgerText.sans(size: 12, color: LedgerColors.textFaint),
+                      style: LedgerText.sans(
+                        size: 12,
+                        color: LedgerColors.textFaint,
+                      ),
                     ),
                   ),
-                  Text('/', style: LedgerText.mono(size: 10, color: const Color(0xFFBDB7A9), tabular: false)),
+                  Text(
+                    '/',
+                    style: LedgerText.mono(
+                      size: 10,
+                      color: const Color(0xFFBDB7A9),
+                      tabular: false,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -82,8 +103,13 @@ class TopBar extends StatelessWidget {
                 value: fy,
                 isDense: true,
                 icon: const SizedBox.shrink(),
-                style: LedgerText.mono(size: 12, color: LedgerColors.textStrong),
-                items: _fyOptions.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                style: LedgerText.mono(
+                  size: 12,
+                  color: LedgerColors.textStrong,
+                ),
+                items: _fyOptions
+                    .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                    .toList(),
                 onChanged: (v) {
                   if (v != null) onFyChanged(v);
                 },

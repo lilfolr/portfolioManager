@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
-import 'app_shell.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'auth/auth_gate.dart';
+import 'supabase_config.dart';
 import 'theme/ledger_theme.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    // `publishableKey` is the current param name; the value is still the
+    // legacy anon JWT that `make db-status` / `supabase status` prints for
+    // self-hosted local stacks.
+    publishableKey: SupabaseConfig.anonKey,
+  );
   runApp(const MyApp());
 }
 
@@ -19,7 +30,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: LedgerColors.white,
         colorScheme: ColorScheme.fromSeed(seedColor: LedgerColors.link),
       ),
-      home: const LedgerAppShell(),
+      home: const AuthGate(),
     );
   }
 }

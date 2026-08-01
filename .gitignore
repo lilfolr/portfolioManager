@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local Supabase connection config (anon key + URL from `make db-status`).
+# See env/local.example.json for the expected shape.
+/env/local.json

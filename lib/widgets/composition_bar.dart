@@ -59,7 +59,9 @@ class _CompositionBarState extends State<CompositionBar> {
 
   @override
   Widget build(BuildContext context) {
-    final active = _active != null && _active! < widget.segments.length ? widget.segments[_active!] : null;
+    final active = _active != null && _active! < widget.segments.length
+        ? widget.segments[_active!]
+        : null;
     final caption = active == null
         ? widget.defaultCaption
         : '${active.fullLabel} · ${active.pctLabel} of value';
@@ -75,10 +77,23 @@ class _CompositionBarState extends State<CompositionBar> {
         children: [
           Row(
             children: [
-              Expanded(child: Text('COMPOSITION · SHARE OF MARKET VALUE', style: LedgerText.eyebrow())),
-              _modeButton('by holding', widget.byHoldingSelected, widget.byHoldingTap),
+              Expanded(
+                child: Text(
+                  'COMPOSITION · SHARE OF MARKET VALUE',
+                  style: LedgerText.eyebrow(),
+                ),
+              ),
+              _modeButton(
+                'by holding',
+                widget.byHoldingSelected,
+                widget.byHoldingTap,
+              ),
               const SizedBox(width: 2),
-              _modeButton('by source account', !widget.byHoldingSelected, widget.bySourceTap),
+              _modeButton(
+                'by source account',
+                !widget.byHoldingSelected,
+                widget.bySourceTap,
+              ),
             ],
           ),
           const SizedBox(height: 11),
@@ -88,7 +103,9 @@ class _CompositionBarState extends State<CompositionBar> {
               children: [
                 for (var i = 0; i < widget.segments.length; i++)
                   Expanded(
-                    flex: (widget.segments[i].widthFraction * 10000).round().clamp(1, 1000000),
+                    flex: (widget.segments[i].widthFraction * 10000)
+                        .round()
+                        .clamp(1, 1000000),
                     child: MouseRegion(
                       onEnter: (_) => _select(i),
                       child: GestureDetector(
@@ -100,7 +117,10 @@ class _CompositionBarState extends State<CompositionBar> {
                             color: widget.segments[i].color,
                             borderRadius: BorderRadius.circular(2),
                           ),
-                          child: Opacity(opacity: _active == null || _active == i ? 1 : 0.32, child: const SizedBox.expand()),
+                          child: Opacity(
+                            opacity: _active == null || _active == i ? 1 : 0.32,
+                            child: const SizedBox.expand(),
+                          ),
                         ),
                       ),
                     ),
@@ -123,11 +143,32 @@ class _CompositionBarState extends State<CompositionBar> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(width: 7, height: 7, decoration: BoxDecoration(color: widget.segments[i].color, borderRadius: BorderRadius.circular(2))),
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: BoxDecoration(
+                                color: widget.segments[i].color,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
                             const SizedBox(width: 6),
-                            Text(widget.segments[i].label, style: LedgerText.mono(size: 11, color: LedgerColors.textStrong, height: 1.4)),
+                            Text(
+                              widget.segments[i].label,
+                              style: LedgerText.mono(
+                                size: 11,
+                                color: LedgerColors.textStrong,
+                                height: 1.4,
+                              ),
+                            ),
                             const SizedBox(width: 4),
-                            Text(widget.segments[i].pctLabel, style: LedgerText.mono(size: 11, color: LedgerColors.textMid, height: 1.4)),
+                            Text(
+                              widget.segments[i].pctLabel,
+                              style: LedgerText.mono(
+                                size: 11,
+                                color: LedgerColors.textMid,
+                                height: 1.4,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -135,7 +176,16 @@ class _CompositionBarState extends State<CompositionBar> {
                 ),
               ),
               const SizedBox(width: 16),
-              Text(caption, textAlign: TextAlign.right, style: LedgerText.mono(size: 11, color: LedgerColors.textMuted, height: 1.5, tabular: false)),
+              Text(
+                caption,
+                textAlign: TextAlign.right,
+                style: LedgerText.mono(
+                  size: 11,
+                  color: LedgerColors.textMuted,
+                  height: 1.5,
+                  tabular: false,
+                ),
+              ),
             ],
           ),
         ],
@@ -155,7 +205,14 @@ class _CompositionBarState extends State<CompositionBar> {
             border: Border.all(color: LedgerColors.borderSubtle),
             borderRadius: BorderRadius.circular(4),
           ),
-          child: Text(label, style: LedgerText.mono(size: 11, color: LedgerColors.textMid, tabular: false)),
+          child: Text(
+            label,
+            style: LedgerText.mono(
+              size: 11,
+              color: LedgerColors.textMid,
+              tabular: false,
+            ),
+          ),
         ),
       ),
     );

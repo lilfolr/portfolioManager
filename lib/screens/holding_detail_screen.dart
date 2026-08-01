@@ -45,7 +45,14 @@ class _HoldingDetailScreenState extends State<HoldingDetailScreen> {
             padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 0),
             child: GestureDetector(
               onTap: widget.onBack,
-              child: Text('‹ Holdings', style: LedgerText.mono(size: 11.5, color: LedgerColors.textMuted, tabular: false)),
+              child: Text(
+                '‹ Holdings',
+                style: LedgerText.mono(
+                  size: 11.5,
+                  color: LedgerColors.textMuted,
+                  tabular: false,
+                ),
+              ),
             ),
           ),
           Padding(
@@ -64,8 +71,21 @@ class _HoldingDetailScreenState extends State<HoldingDetailScreen> {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: 12,
                       children: [
-                        Text('VAS', style: LedgerText.mono(size: 24, weight: FontWeight.w500, letterSpacing: -0.24)),
-                        Text('Vanguard Australian Shares Index ETF', style: LedgerText.sans(size: 15, color: LedgerColors.textStrong)),
+                        Text(
+                          'VAS',
+                          style: LedgerText.mono(
+                            size: 24,
+                            weight: FontWeight.w500,
+                            letterSpacing: -0.24,
+                          ),
+                        ),
+                        Text(
+                          'Vanguard Australian Shares Index ETF',
+                          style: LedgerText.sans(
+                            size: 15,
+                            color: LedgerColors.textStrong,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 9),
@@ -75,8 +95,14 @@ class _HoldingDetailScreenState extends State<HoldingDetailScreen> {
                       children: const [
                         PlainTag(label: 'ASX'),
                         PlainTag(label: 'Unit trust · AMIT'),
-                        SourceDotChip(label: 'CommSec 0421', dotColor: LedgerColors.link),
-                        SourceDotChip(label: 'Computershare DRP', dotColor: Color(0xFF7A6F57)),
+                        SourceDotChip(
+                          label: 'CommSec 0421',
+                          dotColor: LedgerColors.link,
+                        ),
+                        SourceDotChip(
+                          label: 'Computershare DRP',
+                          dotColor: Color(0xFF7A6F57),
+                        ),
                       ],
                     ),
                   ],
@@ -102,7 +128,12 @@ class _HoldingDetailScreenState extends State<HoldingDetailScreen> {
                 _key('COST BASE', '39,920.04'),
                 _key('AVG COST', '86.78'),
                 _key('MARKET VALUE', '46,989.00'),
-                _key('UNREALISED', '7,068.96', trailing: '17.71%', color: posColor),
+                _key(
+                  'UNREALISED',
+                  '7,068.96',
+                  trailing: '17.71%',
+                  color: posColor,
+                ),
                 _key('INCOME · ${widget.fy}', '2,584.54'),
               ],
             ),
@@ -128,7 +159,12 @@ class _HoldingDetailScreenState extends State<HoldingDetailScreen> {
     );
   }
 
-  Widget _key(String label, String value, {String? trailing, Color color = LedgerColors.ink}) {
+  Widget _key(
+    String label,
+    String value, {
+    String? trailing,
+    Color color = LedgerColors.ink,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -145,7 +181,14 @@ class _HoldingDetailScreenState extends State<HoldingDetailScreen> {
               Text(value, style: LedgerText.mono(size: 18, color: color)),
               if (trailing != null) ...[
                 const SizedBox(width: 7),
-                Text(trailing, style: LedgerText.mono(size: 11.5, color: color, tabular: false)),
+                Text(
+                  trailing,
+                  style: LedgerText.mono(
+                    size: 11.5,
+                    color: color,
+                    tabular: false,
+                  ),
+                ),
               ],
             ],
           ),
@@ -161,12 +204,19 @@ class _HoldingDetailScreenState extends State<HoldingDetailScreen> {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: primary ? LedgerColors.ink : Colors.white,
-        border: Border.all(color: primary ? LedgerColors.ink : LedgerColors.borderButton),
+        border: Border.all(
+          color: primary ? LedgerColors.ink : LedgerColors.borderButton,
+        ),
         borderRadius: BorderRadius.circular(5),
       ),
-      child: Text(label,
-          style: LedgerText.sans(
-              size: 12.5, weight: primary ? FontWeight.w500 : FontWeight.w400, color: primary ? const Color(0xFFF7F6F3) : LedgerColors.textStrong)),
+      child: Text(
+        label,
+        style: LedgerText.sans(
+          size: 12.5,
+          weight: primary ? FontWeight.w500 : FontWeight.w400,
+          color: primary ? const Color(0xFFF7F6F3) : LedgerColors.textStrong,
+        ),
+      ),
     );
   }
 
@@ -177,14 +227,31 @@ class _HoldingDetailScreenState extends State<HoldingDetailScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          border: active ? const Border(bottom: BorderSide(color: LedgerColors.ink, width: 2)) : null,
+          border: active
+              ? const Border(
+                  bottom: BorderSide(color: LedgerColors.ink, width: 2),
+                )
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label, style: LedgerText.sans(size: 13, color: active ? LedgerColors.ink : LedgerColors.textMuted)),
+            Text(
+              label,
+              style: LedgerText.sans(
+                size: 13,
+                color: active ? LedgerColors.ink : LedgerColors.textMuted,
+              ),
+            ),
             const SizedBox(width: 6),
-            Text(count, style: LedgerText.mono(size: 11, color: LedgerColors.textFaint, tabular: false)),
+            Text(
+              count,
+              style: LedgerText.mono(
+                size: 11,
+                color: LedgerColors.textFaint,
+                tabular: false,
+              ),
+            ),
           ],
         ),
       ),
@@ -196,7 +263,17 @@ class _ParcelsTab extends StatelessWidget {
   const _ParcelsTab({required this.hPad});
   final double hPad;
 
-  static const _widths = [88.0, 108.0, 96.0, 78.0, 84.0, 118.0, 96.0, 136.0, 130.0];
+  static const _widths = [
+    88.0,
+    108.0,
+    96.0,
+    78.0,
+    84.0,
+    118.0,
+    96.0,
+    136.0,
+    130.0,
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -219,7 +296,10 @@ class _ParcelsTab extends StatelessWidget {
                   width: 14,
                   height: 14,
                   margin: const EdgeInsets.only(top: 1),
-                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: LedgerColors.link, width: 1.5)),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: LedgerColors.link, width: 1.5),
+                  ),
                 ),
                 const SizedBox(width: 11),
                 Expanded(
@@ -228,9 +308,16 @@ class _ParcelsTab extends StatelessWidget {
                       style: LedgerText.sans(size: 12, height: 1.55),
                       children: [
                         const TextSpan(
-                            text:
-                                'Parcels are derived from transactions and are read-only. To change a parcel, edit or reverse the transaction it came from — the parcel recalculates. '),
-                        TextSpan(text: 'See transaction history', style: LedgerText.sans(size: 12, color: LedgerColors.link)),
+                          text:
+                              'Parcels are derived from transactions and are read-only. To change a parcel, edit or reverse the transaction it came from — the parcel recalculates. ',
+                        ),
+                        TextSpan(
+                          text: 'See transaction history',
+                          style: LedgerText.sans(
+                            size: 12,
+                            color: LedgerColors.link,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -241,43 +328,114 @@ class _ParcelsTab extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         _horizontalTable(
-          header: ['PARCEL', 'ACQUIRED', 'FROM TXN', 'ORIG', 'REMAIN', 'COST BASE', 'PER UNIT', '12-MONTH STATUS', 'PARCEL STATE'],
-          rightAlign: const [false, false, false, true, true, true, true, false, false],
+          header: [
+            'PARCEL',
+            'ACQUIRED',
+            'FROM TXN',
+            'ORIG',
+            'REMAIN',
+            'COST BASE',
+            'PER UNIT',
+            '12-MONTH STATUS',
+            'PARCEL STATE',
+          ],
+          rightAlign: const [
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+          ],
           rows: [
             for (final p in SampleData.parcels)
               [
-                Text(p.id, style: LedgerText.mono(size: 12, color: LedgerColors.textMid)),
+                Text(
+                  p.id,
+                  style: LedgerText.mono(size: 12, color: LedgerColors.textMid),
+                ),
                 Text(p.date, style: LedgerText.mono(size: 12.5)),
-                Text(p.txn, style: LedgerText.mono(size: 12, color: LedgerColors.link)),
-                Text(p.orig.toString(), style: LedgerText.mono(size: 12.5, color: LedgerColors.textMuted)),
+                Text(
+                  p.txn,
+                  style: LedgerText.mono(size: 12, color: LedgerColors.link),
+                ),
+                Text(
+                  p.orig.toString(),
+                  style: LedgerText.mono(
+                    size: 12.5,
+                    color: LedgerColors.textMuted,
+                  ),
+                ),
                 Text(p.rem.toString(), style: LedgerText.mono(size: 12.5)),
                 Text(money(p.cost), style: LedgerText.mono(size: 12.5)),
-                Text(money(p.perUnit), style: LedgerText.mono(size: 12.5, color: LedgerColors.textMid)),
-                HeldStatusPill(eligible: p.longTermEligible, heldDate: p.heldDate),
+                Text(
+                  money(p.perUnit),
+                  style: LedgerText.mono(
+                    size: 12.5,
+                    color: LedgerColors.textMid,
+                  ),
+                ),
+                HeldStatusPill(
+                  eligible: p.longTermEligible,
+                  heldDate: p.heldDate,
+                ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(p.status, style: LedgerText.sans(size: 11.5, height: 1.4)),
+                    Text(
+                      p.status,
+                      style: LedgerText.sans(size: 11.5, height: 1.4),
+                    ),
                     if (p.note != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
-                        child: Text(p.note!, style: LedgerText.mono(size: 10, color: LedgerColors.textFaint, tabular: false)),
+                        child: Text(
+                          p.note!,
+                          style: LedgerText.mono(
+                            size: 10,
+                            color: LedgerColors.textFaint,
+                            tabular: false,
+                          ),
+                        ),
                       ),
                   ],
                 ),
               ],
           ],
-          rowBg: [for (final p in SampleData.parcels) p.partiallyDepleted ? LedgerColors.surfaceParcelTint : Colors.white],
+          rowBg: [
+            for (final p in SampleData.parcels)
+              p.partiallyDepleted
+                  ? LedgerColors.surfaceParcelTint
+                  : Colors.white,
+          ],
           widths: _widths,
           hPad: hPad,
-          footer: ['TOTAL', '', '', '498', '460', '39,920.04', '86.78', '412 eligible', '48 pending'],
+          footer: [
+            'TOTAL',
+            '',
+            '',
+            '498',
+            '460',
+            '39,920.04',
+            '86.78',
+            '412 eligible',
+            '48 pending',
+          ],
         ),
         Padding(
           padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 26),
           child: Text(
             'P-0002 was partially disposed on 02 May 2024 (38 of 80 units, FIFO). Remaining cost base is pro-rated, not re-averaged. CGT discount is not applied on this screen.',
-            style: LedgerText.mono(size: 11, color: LedgerColors.textFaint, height: 1.6, tabular: false),
+            style: LedgerText.mono(
+              size: 11,
+              color: LedgerColors.textFaint,
+              height: 1.6,
+              tabular: false,
+            ),
           ),
         ),
       ],
@@ -302,7 +460,11 @@ class _TxnsTab extends StatelessWidget {
     }
   }
 
-  String _kindLabel(TxnKind k) => switch (k) { TxnKind.csv => 'CSV', TxnKind.email => 'EMAIL', TxnKind.manual => 'MANUAL' };
+  String _kindLabel(TxnKind k) => switch (k) {
+    TxnKind.csv => 'CSV',
+    TxnKind.email => 'EMAIL',
+    TxnKind.manual => 'MANUAL',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -317,41 +479,100 @@ class _TxnsTab extends StatelessWidget {
             spacing: 14,
             runSpacing: 10,
             children: [
-              Text('Immutable records. A correction is entered as a reversing transaction — nothing is overwritten.',
-                  style: LedgerText.sans(size: 12, color: LedgerColors.textMid)),
+              Text(
+                'Immutable records. A correction is entered as a reversing transaction — nothing is overwritten.',
+                style: LedgerText.sans(size: 12, color: LedgerColors.textMid),
+              ),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: const [
-                  SourceDotChip(label: 'CSV 4', dotColor: LedgerColors.link, dense: true),
+                  SourceDotChip(
+                    label: 'CSV 4',
+                    dotColor: LedgerColors.link,
+                    dense: true,
+                  ),
                   SizedBox(width: 6),
-                  SourceDotChip(label: 'Email 3', dotColor: Color(0xFF7A6F57), dense: true),
+                  SourceDotChip(
+                    label: 'Email 3',
+                    dotColor: Color(0xFF7A6F57),
+                    dense: true,
+                  ),
                   SizedBox(width: 6),
-                  SourceDotChip(label: 'Manual 2', dotColor: LedgerColors.textFaint, dense: true),
+                  SourceDotChip(
+                    label: 'Manual 2',
+                    dotColor: LedgerColors.textFaint,
+                    dense: true,
+                  ),
                 ],
               ),
             ],
           ),
         ),
         _horizontalTable(
-          header: ['TXN', 'DATE', 'TYPE', 'UNITS', 'PRICE', 'AMOUNT', 'PROVENANCE', 'PARCEL'],
-          rightAlign: const [false, false, false, true, true, true, false, false],
+          header: [
+            'TXN',
+            'DATE',
+            'TYPE',
+            'UNITS',
+            'PRICE',
+            'AMOUNT',
+            'PROVENANCE',
+            'PARCEL',
+          ],
+          rightAlign: const [
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+          ],
           rows: [
             for (final t in SampleData.txns)
               [
-                Text(t.id, style: LedgerText.mono(size: 12, color: LedgerColors.link)),
+                Text(
+                  t.id,
+                  style: LedgerText.mono(size: 12, color: LedgerColors.link),
+                ),
                 Text(t.date, style: LedgerText.mono(size: 12.5)),
                 Text(t.type, style: LedgerText.sans(size: 12)),
                 Text(t.units, style: LedgerText.mono(size: 12.5)),
-                Text(t.price, style: LedgerText.mono(size: 12.5, color: LedgerColors.textMid)),
+                Text(
+                  t.price,
+                  style: LedgerText.mono(
+                    size: 12.5,
+                    color: LedgerColors.textMid,
+                  ),
+                ),
                 Text(t.amount, style: LedgerText.mono(size: 12.5)),
                 Row(
                   children: [
-                    SourceDotChip(label: _kindLabel(t.kind), dotColor: _kindColor(t.kind), textColor: _kindColor(t.kind), dense: true),
+                    SourceDotChip(
+                      label: _kindLabel(t.kind),
+                      dotColor: _kindColor(t.kind),
+                      textColor: _kindColor(t.kind),
+                      dense: true,
+                    ),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(t.source, overflow: TextOverflow.ellipsis, style: LedgerText.mono(size: 11.5, color: LedgerColors.textMuted, tabular: false))),
+                    Expanded(
+                      child: Text(
+                        t.source,
+                        overflow: TextOverflow.ellipsis,
+                        style: LedgerText.mono(
+                          size: 11.5,
+                          color: LedgerColors.textMuted,
+                          tabular: false,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-                Text(t.parcel, style: LedgerText.mono(size: 11.5, tabular: false)),
+                Text(
+                  t.parcel,
+                  style: LedgerText.mono(size: 11.5, tabular: false),
+                ),
               ],
           ],
           rowBg: [for (final _ in SampleData.txns) Colors.white],
@@ -360,8 +581,15 @@ class _TxnsTab extends StatelessWidget {
         ),
         Padding(
           padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 26),
-          child: Text('Every row retains its source artefact. Manual entries record who entered them and when.',
-              style: LedgerText.mono(size: 11, color: LedgerColors.textFaint, height: 1.6, tabular: false)),
+          child: Text(
+            'Every row retains its source artefact. Manual entries record who entered them and when.',
+            style: LedgerText.mono(
+              size: 11,
+              color: LedgerColors.textFaint,
+              height: 1.6,
+              tabular: false,
+            ),
+          ),
         ),
       ],
     );
@@ -373,7 +601,16 @@ class _IncomeTab extends StatelessWidget {
   final double hPad;
   final String fy;
 
-  static const _widths = [118.0, 130.0, 80.0, 108.0, 108.0, 116.0, 112.0, 200.0];
+  static const _widths = [
+    118.0,
+    130.0,
+    80.0,
+    108.0,
+    108.0,
+    116.0,
+    112.0,
+    200.0,
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -388,8 +625,10 @@ class _IncomeTab extends StatelessWidget {
             spacing: 14,
             runSpacing: 10,
             children: [
-              Text('Distributions received. Component detail comes from the annual AMIT statement.',
-                  style: LedgerText.sans(size: 12, color: LedgerColors.textMid)),
+              Text(
+                'Distributions received. Component detail comes from the annual AMIT statement.',
+                style: LedgerText.sans(size: 12, color: LedgerColors.textMid),
+              ),
               Container(
                 padding: const EdgeInsets.fromLTRB(8, 4, 10, 4),
                 decoration: BoxDecoration(
@@ -400,9 +639,23 @@ class _IncomeTab extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(width: 5, height: 5, decoration: const BoxDecoration(color: LedgerColors.pendingAmber, shape: BoxShape.circle)),
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: const BoxDecoration(
+                        color: LedgerColors.pendingAmber,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                     const SizedBox(width: 7),
-                    Text('1 payment awaiting component entry', style: LedgerText.mono(size: 11, color: LedgerColors.pendingText, tabular: false)),
+                    Text(
+                      '1 payment awaiting component entry',
+                      style: LedgerText.mono(
+                        size: 11,
+                        color: LedgerColors.pendingText,
+                        tabular: false,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -410,32 +663,70 @@ class _IncomeTab extends StatelessWidget {
           ),
         ),
         _horizontalTable(
-          header: ['PAY DATE', 'TYPE', 'UNITS', 'FRANKED', 'UNFRANKED', 'FRANKING CR', 'CASH', 'STATEMENT'],
+          header: [
+            'PAY DATE',
+            'TYPE',
+            'UNITS',
+            'FRANKED',
+            'UNFRANKED',
+            'FRANKING CR',
+            'CASH',
+            'STATEMENT',
+          ],
           rightAlign: const [false, false, true, true, true, true, true, false],
           rows: [
             for (final i in SampleData.income)
               [
                 Text(i.date, style: LedgerText.mono(size: 12.5)),
                 Text(i.type, style: LedgerText.sans(size: 12)),
-                Text(i.units, style: LedgerText.mono(size: 12.5, color: LedgerColors.textMid)),
+                Text(
+                  i.units,
+                  style: LedgerText.mono(
+                    size: 12.5,
+                    color: LedgerColors.textMid,
+                  ),
+                ),
                 Text(i.franked, style: LedgerText.mono(size: 12.5)),
                 Text(i.unfranked, style: LedgerText.mono(size: 12.5)),
                 Text(i.frankingCredit, style: LedgerText.mono(size: 12.5)),
                 Text(i.cash, style: LedgerText.mono(size: 12.5)),
-                Text(i.componentStatement, style: LedgerText.mono(size: 11.5, color: i.pending ? LedgerColors.pendingText : LedgerColors.textMuted, tabular: false)),
+                Text(
+                  i.componentStatement,
+                  style: LedgerText.mono(
+                    size: 11.5,
+                    color: i.pending
+                        ? LedgerColors.pendingText
+                        : LedgerColors.textMuted,
+                    tabular: false,
+                  ),
+                ),
               ],
           ],
           rowBg: [for (final _ in SampleData.income) Colors.white],
           widths: _widths,
           hPad: hPad,
           footer: [fy, '', '1,004.30', '536.88', '430.41', '1,541.18', '', ''],
-          footerRightAlign: const [false, false, true, true, true, true, false, false],
+          footerRightAlign: const [
+            false,
+            false,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+          ],
         ),
         Padding(
           padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 26),
           child: Text(
             'Franking credits are recorded as stated on each statement. Where a source does not state a value it is left blank rather than derived.',
-            style: LedgerText.mono(size: 11, color: LedgerColors.textFaint, height: 1.6, tabular: false),
+            style: LedgerText.mono(
+              size: 11,
+              color: LedgerColors.textFaint,
+              height: 1.6,
+              tabular: false,
+            ),
           ),
         ),
       ],
@@ -460,7 +751,9 @@ Widget _horizontalTable({
   final total = widths.fold<double>(0, (s, w) => s + w);
   return Container(
     margin: EdgeInsets.only(top: 18),
-    decoration: const BoxDecoration(border: Border(top: BorderSide(color: LedgerColors.borderSidebar))),
+    decoration: const BoxDecoration(
+      border: Border(top: BorderSide(color: LedgerColors.borderSidebar)),
+    ),
     child: SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: EdgeInsets.symmetric(horizontal: hPad),
@@ -471,7 +764,9 @@ Widget _horizontalTable({
             Container(
               decoration: const BoxDecoration(
                 color: LedgerColors.surfaceTable,
-                border: Border(bottom: BorderSide(color: LedgerColors.borderHeaderRule)),
+                border: Border(
+                  bottom: BorderSide(color: LedgerColors.borderHeaderRule),
+                ),
               ),
               child: Row(
                 children: [
@@ -479,13 +774,23 @@ Widget _horizontalTable({
                     SizedBox(
                       width: widths[i],
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: i == 0 ? 14 : 12, vertical: 9),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: i == 0 ? 14 : 12,
+                          vertical: 9,
+                        ),
                         child: Align(
-                          alignment: rightAlign[i] ? Alignment.centerRight : Alignment.centerLeft,
+                          alignment: rightAlign[i]
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
-                            alignment: rightAlign[i] ? Alignment.centerRight : Alignment.centerLeft,
-                            child: Text(header[i], style: LedgerText.columnLabel()),
+                            alignment: rightAlign[i]
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: Text(
+                              header[i],
+                              style: LedgerText.columnLabel(),
+                            ),
                           ),
                         ),
                       ),
@@ -497,7 +802,9 @@ Widget _horizontalTable({
               Container(
                 decoration: BoxDecoration(
                   color: rowBg[r],
-                  border: const Border(bottom: BorderSide(color: LedgerColors.borderRow)),
+                  border: const Border(
+                    bottom: BorderSide(color: LedgerColors.borderRow),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -506,9 +813,14 @@ Widget _horizontalTable({
                       SizedBox(
                         width: widths[i],
                         child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: i == 0 ? 14 : 12, vertical: 10),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: i == 0 ? 14 : 12,
+                            vertical: 10,
+                          ),
                           child: Align(
-                            alignment: rightAlign[i] ? Alignment.centerRight : Alignment.centerLeft,
+                            alignment: rightAlign[i]
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
                             child: rows[r][i],
                           ),
                         ),
@@ -520,7 +832,12 @@ Widget _horizontalTable({
               Container(
                 decoration: const BoxDecoration(
                   color: LedgerColors.surfaceTable,
-                  border: Border(top: BorderSide(color: LedgerColors.borderTotalRule, width: 1.5)),
+                  border: Border(
+                    top: BorderSide(
+                      color: LedgerColors.borderTotalRule,
+                      width: 1.5,
+                    ),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -528,14 +845,28 @@ Widget _horizontalTable({
                       SizedBox(
                         width: widths[i],
                         child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: i == 0 ? 14 : 12, vertical: 12),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: i == 0 ? 14 : 12,
+                            vertical: 12,
+                          ),
                           child: Align(
-                            alignment: (footerRightAlign ?? rightAlign)[i] ? Alignment.centerRight : Alignment.centerLeft,
+                            alignment: (footerRightAlign ?? rightAlign)[i]
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
                             child: Text(
                               footer[i],
                               style: i == 0
-                                  ? LedgerText.mono(size: 11, weight: FontWeight.w500, color: LedgerColors.textMid, letterSpacing: 0.9, tabular: false)
-                                  : LedgerText.mono(size: 13, weight: FontWeight.w500),
+                                  ? LedgerText.mono(
+                                      size: 11,
+                                      weight: FontWeight.w500,
+                                      color: LedgerColors.textMid,
+                                      letterSpacing: 0.9,
+                                      tabular: false,
+                                    )
+                                  : LedgerText.mono(
+                                      size: 13,
+                                      weight: FontWeight.w500,
+                                    ),
                             ),
                           ),
                         ),

@@ -66,19 +66,21 @@ class _LedgerAppShellState extends State<LedgerAppShell> {
               Expanded(
                 child: switch (_screen) {
                   LedgerScreen.holdings => HoldingsScreen(
-                      fy: _fy,
-                      wide: wide,
-                      narrow: narrow,
-                      horizontalPadding: hPad,
-                      onOpenDetail: () => _go(LedgerScreen.detail),
-                    ),
+                    fy: _fy,
+                    wide: wide,
+                    narrow: narrow,
+                    horizontalPadding: hPad,
+                    onOpenDetail: () => _go(LedgerScreen.detail),
+                  ),
                   LedgerScreen.detail => HoldingDetailScreen(
-                      fy: _fy,
-                      wide: wide,
-                      horizontalPadding: hPad,
-                      onBack: () => _go(LedgerScreen.holdings),
-                    ),
-                  LedgerScreen.other => NotInPassScreen(onBack: () => _go(LedgerScreen.holdings)),
+                    fy: _fy,
+                    wide: wide,
+                    horizontalPadding: hPad,
+                    onBack: () => _go(LedgerScreen.holdings),
+                  ),
+                  LedgerScreen.other => NotInPassScreen(
+                    onBack: () => _go(LedgerScreen.holdings),
+                  ),
                 },
               ),
             ],

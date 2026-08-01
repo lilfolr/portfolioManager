@@ -39,7 +39,11 @@ class SourceDotChip extends StatelessWidget {
             child: Text(
               label,
               overflow: TextOverflow.ellipsis,
-              style: LedgerText.mono(size: dense ? 10.5 : 11, color: textColor, tabular: false),
+              style: LedgerText.mono(
+                size: dense ? 10.5 : 11,
+                color: textColor,
+                tabular: false,
+              ),
             ),
           ),
         ],
@@ -63,7 +67,14 @@ class PlainTag extends StatelessWidget {
         border: Border.all(color: LedgerColors.borderSidebar),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(label, style: LedgerText.mono(size: 10.5, color: LedgerColors.textMid, tabular: false)),
+      child: Text(
+        label,
+        style: LedgerText.mono(
+          size: 10.5,
+          color: LedgerColors.textMid,
+          tabular: false,
+        ),
+      ),
     );
   }
 }
@@ -71,37 +82,65 @@ class PlainTag extends StatelessWidget {
 /// The "eligible" / "not yet" 12-month CGT-discount status pill, plus the
 /// small held-since caption beneath it.
 class HeldStatusPill extends StatelessWidget {
-  const HeldStatusPill({super.key, required this.eligible, required this.heldDate});
+  const HeldStatusPill({
+    super.key,
+    required this.eligible,
+    required this.heldDate,
+  });
 
   final bool eligible;
   final String heldDate;
 
   @override
   Widget build(BuildContext context) {
-    final fg = eligible ? LedgerColors.heldEligibleFg : LedgerColors.heldNotYetFg;
-    final bg = eligible ? LedgerColors.heldEligibleBg : LedgerColors.heldNotYetBg;
-    final border = eligible ? LedgerColors.heldEligibleBorder : LedgerColors.heldNotYetBorder;
+    final fg = eligible
+        ? LedgerColors.heldEligibleFg
+        : LedgerColors.heldNotYetFg;
+    final bg = eligible
+        ? LedgerColors.heldEligibleBg
+        : LedgerColors.heldNotYetBg;
+    final border = eligible
+        ? LedgerColors.heldEligibleBorder
+        : LedgerColors.heldNotYetBorder;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           padding: const EdgeInsets.fromLTRB(6, 2, 8, 2),
-          decoration: BoxDecoration(color: bg, border: Border.all(color: border), borderRadius: BorderRadius.circular(4)),
+          decoration: BoxDecoration(
+            color: bg,
+            border: Border.all(color: border),
+            borderRadius: BorderRadius.circular(4),
+          ),
           child: FittedBox(
             fit: BoxFit.scaleDown,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(width: 5, height: 5, decoration: BoxDecoration(color: fg, shape: BoxShape.circle)),
+                Container(
+                  width: 5,
+                  height: 5,
+                  decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
+                ),
                 const SizedBox(width: 6),
-                Text(eligible ? 'eligible' : 'not yet', style: LedgerText.mono(size: 10.5, color: fg, tabular: false)),
+                Text(
+                  eligible ? 'eligible' : 'not yet',
+                  style: LedgerText.mono(size: 10.5, color: fg, tabular: false),
+                ),
               ],
             ),
           ),
         ),
         const SizedBox(height: 3),
-        Text(heldDate, style: LedgerText.mono(size: 10, color: LedgerColors.textFaint, tabular: false)),
+        Text(
+          heldDate,
+          style: LedgerText.mono(
+            size: 10,
+            color: LedgerColors.textFaint,
+            tabular: false,
+          ),
+        ),
       ],
     );
   }

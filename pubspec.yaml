@@ -37,6 +37,7 @@ dependencies:
 
   # IBM Plex Sans / IBM Plex Mono, used throughout the ledger UI.
   google_fonts: ^6.2.1
+  supabase_flutter: ^2.16.0
 
 dev_dependencies:
   flutter_test:

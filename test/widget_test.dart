@@ -1,30 +1,126 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:portfolio_app/format.dart';
+import 'package:portfolio_app/data/sample_data.dart';
 import 'package:portfolio_app/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('app builds and shows the Holdings screen with all 9 rows', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
     await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('Holdings'), findsWidgets);
+    final table = find.byKey(const Key('holdingsTable'));
+    expect(table, findsOneWidget);
+    for (final h in SampleData.holdings) {
+      expect(find.descendant(of: table, matching: find.text(h.sym)), findsOneWidget);
+    }
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('Stake source filter matches both Stake AU and Stake US via prefix match', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Stake'));
+    await tester.pumpAndSettle();
+
+    final table = find.byKey(const Key('holdingsTable'));
+    // Stake AU: A200, GOLD. Stake US: VOO. All three symbols should remain.
+    expect(find.descendant(of: table, matching: find.text('A200')), findsOneWidget);
+    expect(find.descendant(of: table, matching: find.text('GOLD')), findsOneWidget);
+    expect(find.descendant(of: table, matching: find.text('VOO')), findsOneWidget);
+    // A holding under a different source should be filtered out of the table
+    // (it still appears in the sidebar nav label, which is unaffected by the filter).
+    expect(find.descendant(of: table, matching: find.text('VAS')), findsNothing);
+  });
+
+  testWidgets('tapping a new column header sorts desc, tapping again flips to asc', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+
+    // Default sort is MARKET VALUE desc, so switch to a different column:
+    // selecting a new key always starts descending, and repeat-tapping the
+    // same (now active) key flips to ascending.
+    await tester.tap(find.text('UNITS'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('↓'), findsWidgets);
+
+    await tester.tap(find.text('UNITS'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('↑'), findsWidgets);
+  });
+
+  testWidgets('holding detail screen and all three tabs render without layout errors', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('VAS').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Vanguard Australian Shares Index ETF'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Transactions'));
+    await tester.pumpAndSettle();
+    expect(find.text('T-0042'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Income'));
+    await tester.pumpAndSettle();
+    expect(find.text('AMIT-2025-Q4'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Parcels'));
+    await tester.pumpAndSettle();
+    expect(find.text('P-0002'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('‹ Holdings'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('holdingsTable')), findsOneWidget);
+  });
+
+  testWidgets('mobile-width layout (chip row, no sidebar) renders without layout errors', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(900, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('VAS detail'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('VAS detail'));
+    await tester.pumpAndSettle();
+    expect(find.text('Vanguard Australian Shares Index ETF'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('money formats en-AU grouped 2dp, sign handling matches DC m()', () {
+    expect(money(-1234.5), '-1,234.50');
+    expect(money(1234.5), '1,234.50');
+    expect(money(0), '0.00');
+    expect(signedMoney(1234.5), '+1,234.50');
+    expect(signedMoney(-1234.5), '-1,234.50');
+    expect(signedPct(17.706), '+17.71%');
+    expect(signedPct(-4.2), '-4.20%');
   });
 }

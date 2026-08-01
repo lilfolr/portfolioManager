@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'app_shell.dart';
+import 'theme/ledger_theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,9 +12,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Portfolio App',
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
-      home: const Scaffold(body: SizedBox.shrink()),
+      title: 'Ledger',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: LedgerColors.white,
+        colorScheme: ColorScheme.fromSeed(seedColor: LedgerColors.link),
+      ),
+      home: const LedgerAppShell(),
     );
   }
 }

@@ -12,17 +12,21 @@ class Sidebar extends StatelessWidget {
     super.key,
     required this.onHoldings,
     required this.onDetail,
+    required this.onTxn,
     required this.onOther,
     required this.isHoldings,
     required this.isDetail,
+    required this.isTxn,
     required this.themeController,
   });
 
   final VoidCallback onHoldings;
   final VoidCallback onDetail;
+  final VoidCallback onTxn;
   final VoidCallback onOther;
   final bool isHoldings;
   final bool isDetail;
+  final bool isTxn;
   final ThemeController themeController;
 
   @override
@@ -96,7 +100,12 @@ class Sidebar extends StatelessWidget {
             badge: '7',
           ),
           _NavItem(label: 'Import sources', selected: false, onTap: onOther),
-          _NavItem(label: 'Transaction entry', selected: false, onTap: onOther),
+          _NavItem(
+            label: 'Transaction entry',
+            selected: isTxn,
+            onTap: onTxn,
+            bold: isTxn,
+          ),
           const Spacer(),
           _UserFooter(themeController: themeController),
         ],
@@ -408,11 +417,13 @@ class MobileNavChips extends StatelessWidget {
     super.key,
     required this.onHoldings,
     required this.onDetail,
+    required this.onTxn,
     required this.onOther,
   });
 
   final VoidCallback onHoldings;
   final VoidCallback onDetail;
+  final VoidCallback onTxn;
   final VoidCallback onOther;
 
   @override
@@ -431,6 +442,8 @@ class MobileNavChips extends StatelessWidget {
             _chip(c, 'Holdings', onHoldings, bold: true),
             const SizedBox(width: 6),
             _chip(c, 'VAS detail', onDetail),
+            const SizedBox(width: 6),
+            _chip(c, 'New transaction', onTxn, bold: true),
             const SizedBox(width: 6),
             _chip(c, 'Income', onOther, muted: true),
             const SizedBox(width: 6),

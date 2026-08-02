@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:fquery/fquery.dart';
+import 'package:fquery_core/fquery_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth/auth_gate.dart';
@@ -17,7 +19,12 @@ Future<void> main() async {
   );
   final themeController = ThemeController();
   await themeController.load();
-  runApp(MyApp(themeController: themeController));
+  runApp(
+    CacheProvider(
+      cache: QueryCache(),
+      child: MyApp(themeController: themeController),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

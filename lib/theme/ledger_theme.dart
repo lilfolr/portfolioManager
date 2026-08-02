@@ -77,10 +77,12 @@ class LedgerPalette extends ThemeExtension<LedgerPalette> {
   final Color surfaceInfoBox;
   final Color surfaceWarnBox;
   final Color surfacePage;
+
   /// Card / panel surface. Replaces the old flat `LedgerColors.white`
   /// literal so cards get an elevated tone rather than pure white in dark
   /// mode.
   final Color surfaceCard;
+
   /// Generic hover fill for list rows / nav items.
   final Color surfaceHover;
 
@@ -108,9 +110,11 @@ class LedgerPalette extends ThemeExtension<LedgerPalette> {
   /// Sidebar user-avatar chip background/border.
   final Color avatarBg;
   final Color avatarBorder;
+
   /// Small identity badge (e.g. account-type tag) background/border.
   final Color badgeBg;
   final Color badgeBorder;
+
   /// Muted glyph colour for chevrons and small inline icons (row disclosure
   /// arrows, search-box slash hint).
   final Color iconMuted;

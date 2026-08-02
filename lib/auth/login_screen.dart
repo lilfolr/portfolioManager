@@ -129,7 +129,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: LedgerText.sans(size: 12.5, color: c.textMuted),
                     ),
                     const SizedBox(height: 20),
-                    Text('EMAIL', style: LedgerText.eyebrow(color: c.textFaint)),
+                    Text(
+                      'EMAIL',
+                      style: LedgerText.eyebrow(color: c.textFaint),
+                    ),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _email,

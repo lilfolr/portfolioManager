@@ -39,6 +39,9 @@ dependencies:
   google_fonts: ^6.2.1
   supabase_flutter: ^2.16.0
   shared_preferences: ^2.3.3
+  fquery: ^3.1.0
+  decimal: ^3.2.6
+  fquery_core: ^3.1.0
 
 dev_dependencies:
   flutter_test:

@@ -1,18 +1,19 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import '../data/sample_data.dart';
+import 'package:fquery/fquery.dart';
+import 'package:fquery_core/fquery_core.dart';
+
+import '../data/portfolio_repository.dart';
 import '../format.dart';
 import '../models/portfolio.dart';
 import '../theme/ledger_theme.dart';
-import '../widgets/composition_bar.dart';
 import '../widgets/source_chip.dart';
 
 enum _SortKey { sym, units, avg, price, value, gain, pct, src }
 
 class _Row {
-  _Row(this.holding, {this.groupHead, this.groupMeta});
+  _Row(this.holding);
   final Holding holding;
-  final String? groupHead;
-  final String? groupMeta;
 }
 
 class HoldingsScreen extends StatefulWidget {
@@ -23,13 +24,20 @@ class HoldingsScreen extends StatefulWidget {
     required this.narrow,
     required this.horizontalPadding,
     required this.onOpenDetail,
+    required this.onAddTransaction,
+    this.fetchData = fetchHoldingsScreenData,
   });
 
   final String fy;
   final bool wide;
   final bool narrow;
   final double horizontalPadding;
-  final VoidCallback onOpenDetail;
+  final ValueChanged<Holding> onOpenDetail;
+  final VoidCallback onAddTransaction;
+
+  /// Overridable for tests, which can't reach a live Supabase instance --
+  /// defaults to the real repository read.
+  final Future<HoldingsScreenData> Function(int financialYear) fetchData;
 
   @override
   State<HoldingsScreen> createState() => _HoldingsScreenState();
@@ -39,21 +47,9 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
   _SortKey _sortKey = _SortKey.value;
   bool _desc = true;
   String _src = 'all';
-  bool _group = false;
-  bool _color = true;
-  bool _byHolding = true;
 
-  static const _colWidths = [
-    82.0,
-    100.0,
-    92.0,
-    124.0,
-    128.0,
-    84.0,
-    168.0,
-    30.0,
-  ];
-  static const _tableMinWidth = 1120.0;
+  static const _colWidths = [82.0, 100.0, 92.0, 128.0, 84.0, 168.0, 30.0];
+  static const _tableMinWidth = 996.0;
 
   void _sortBy(_SortKey key) {
     setState(() {
@@ -66,16 +62,19 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
     });
   }
 
-  List<Holding> get _filtered => SampleData.holdings
-      .where((h) => _src == 'all' || h.source.startsWith(_src))
-      .toList();
+  List<Holding> _filtered(List<Holding> all) =>
+      all
+          .where((h) =>
+              _src == 'all' ||
+              h.accountDisplayName.startsWith(_src))
+          .toList();
 
   List<Holding> _sorted(List<Holding> list) {
     final sorted = [...list];
     int cmp(Holding a, Holding b) {
       switch (_sortKey) {
         case _SortKey.sym:
-          return a.sym.compareTo(b.sym);
+          return a.symbol.compareTo(b.symbol);
         case _SortKey.units:
           return a.units.compareTo(b.units);
         case _SortKey.avg:
@@ -89,7 +88,7 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
         case _SortKey.pct:
           return a.gainPct.compareTo(b.gainPct);
         case _SortKey.src:
-          return a.source.compareTo(b.source);
+          return a.accountDisplayName.compareTo(b.accountDisplayName);
       }
     }
 
@@ -99,104 +98,121 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final c = LedgerColors.of(context);
-    final filtered = _filtered;
-    final sorted = _sorted(filtered);
-
-    final rows = <_Row>[];
-    if (_group) {
-      final seen = <String>[];
-      final byGroup = <String, List<Holding>>{};
-      for (final h in sorted) {
-        if (!byGroup.containsKey(h.source)) {
-          byGroup[h.source] = [];
-          seen.add(h.source);
-        }
-        byGroup[h.source]!.add(h);
-      }
-      for (final key in seen) {
-        final g = byGroup[key]!;
-        final gv = g.fold<double>(0, (s, h) => s + h.value);
-        final gc = g.fold<double>(0, (s, h) => s + h.cost);
-        for (var i = 0; i < g.length; i++) {
-          rows.add(
-            _Row(
-              g[i],
-              groupHead: i == 0 ? key.toUpperCase() : null,
-              groupMeta: i == 0
-                  ? '${g.length} positions · value ${money(gv)} · cost base ${money(gc)}'
-                  : null,
+    final financialYear = financialYearFromLabel(widget.fy);
+    return QueryBuilder<HoldingsScreenData, Exception>(
+      options: QueryOptions(
+        queryKey: QueryKey(['holdingsScreen', financialYear]),
+        queryFn: () => widget.fetchData(financialYear),
+      ),
+      builder: (context, query) {
+        if (query.isLoading) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(48),
+              child: CircularProgressIndicator(),
             ),
           );
         }
-      }
-    } else {
-      for (final h in sorted) {
-        rows.add(_Row(h));
-      }
-    }
+        if (query.isError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(48),
+              child: Text('Could not load holdings: ${query.error}'),
+            ),
+          );
+        }
+        return _HoldingsBody(
+          data: query.data!,
+          fy: widget.fy,
+          wide: widget.wide,
+          narrow: widget.narrow,
+          horizontalPadding: widget.horizontalPadding,
+          onOpenDetail: widget.onOpenDetail,
+          onAddTransaction: widget.onAddTransaction,
+          sortKey: _sortKey,
+          desc: _desc,
+          src: _src,
+          onSort: _sortBy,
+          onSrcChanged: (v) => setState(() => _src = v),
+          filtered: _filtered,
+          sorted: _sorted,
+          colWidths: _colWidths,
+          tableMinWidth: _tableMinWidth,
+        );
+      },
+    );
+  }
+}
 
-    final tValue = filtered.fold<double>(0, (s, h) => s + h.value);
-    final tCost = filtered.fold<double>(0, (s, h) => s + h.cost);
+class _HoldingsBody extends StatelessWidget {
+  const _HoldingsBody({
+    required this.data,
+    required this.fy,
+    required this.wide,
+    required this.narrow,
+    required this.horizontalPadding,
+    required this.onOpenDetail,
+    required this.onAddTransaction,
+    required this.sortKey,
+    required this.desc,
+    required this.src,
+    required this.onSort,
+    required this.onSrcChanged,
+    required this.filtered,
+    required this.sorted,
+    required this.colWidths,
+    required this.tableMinWidth,
+  });
+
+  final HoldingsScreenData data;
+  final String fy;
+  final bool wide;
+  final bool narrow;
+  final double horizontalPadding;
+  final ValueChanged<Holding> onOpenDetail;
+  final VoidCallback onAddTransaction;
+  final _SortKey sortKey;
+  final bool desc;
+  final String src;
+  final ValueChanged<_SortKey> onSort;
+  final ValueChanged<String> onSrcChanged;
+  final List<Holding> Function(List<Holding>) filtered;
+  final List<Holding> Function(List<Holding>) sorted;
+  final List<double> colWidths;
+  final double tableMinWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
+    final all = filtered(data.holdings);
+    final list = sorted(all);
+
+    final rows = [for (final h in list) _Row(h)];
+
+    final tValue = all.fold<Decimal>(Decimal.zero, (s, h) => s + h.value);
+    final tCost = all.fold<Decimal>(Decimal.zero, (s, h) => s + h.costBase);
     final tGain = tValue - tCost;
-    final tGainColor = _color
-        ? (tGain >= 0 ? c.positive : c.negative)
-        : c.ink;
+    final tGainPct = tCost == Decimal.zero
+        ? Decimal.zero
+        : (tGain / tCost).toDecimal(scaleOnInfinitePrecision: 6) *
+              Decimal.fromInt(100);
+    final tGainColor = tGain >= Decimal.zero ? c.positive : c.negative;
 
-    // Composition segments.
-    List<CompositionSegment> segments;
-    if (_byHolding) {
-      final total = filtered.fold<double>(0, (s, h) => s + h.value) == 0
-          ? 1.0
-          : filtered.fold<double>(0, (s, h) => s + h.value);
-      final list = [...filtered]..sort((a, b) => b.value.compareTo(a.value));
-      segments = [
-        for (var i = 0; i < list.length; i++)
-          CompositionSegment(
-            label: list[i].sym,
-            fullLabel: list[i].name,
-            value: list[i].value,
-            color: c.compRamp[i % c.compRamp.length],
-            widthFraction: list[i].value / total,
-            pctLabel: '${(list[i].value / total * 100).toStringAsFixed(1)}%',
-          ),
-      ];
-    } else {
-      final agg = <String, double>{};
-      for (final h in filtered) {
-        agg[h.source] = (agg[h.source] ?? 0) + h.value;
-      }
-      final total = agg.values.fold<double>(0, (s, v) => s + v) == 0
-          ? 1.0
-          : agg.values.fold<double>(0, (s, v) => s + v);
-      final entries = agg.entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
-      segments = [
-        for (final e in entries)
-          CompositionSegment(
-            label: e.key.replaceAll(' · SRN', ''),
-            fullLabel: e.key,
-            value: e.value,
-            color: c.sourceDot(e.key),
-            widthFraction: e.value / total,
-            pctLabel: '${(e.value / total * 100).toStringAsFixed(1)}%',
-          ),
-      ];
-    }
-    final segTotal = segments.fold<double>(0, (s, e) => s + e.value);
-    final top3 =
-        segments.take(3).fold<double>(0, (s, e) => s + e.value) /
-        (segTotal == 0 ? 1 : segTotal) *
-        100;
-    final defaultCaption =
-        'largest 3 = ${top3.toStringAsFixed(1)}% of value · ${segments.length} segments';
+    final totalUnits = all.fold<Decimal>(Decimal.zero, (s, h) => s + h.units);
+    final distinctAccounts = all.map((h) => h.accountId).toSet().length;
+    final priceDateLabel = data.latestPriceDate == null
+        ? 'no priced instruments yet'
+        : 'prices as at ${_shortDate(data.latestPriceDate!)}';
+    final foreignHoldings = all
+        .where((h) => h.fxSubLine != null)
+        .toList(growable: false);
 
-    final hPad = widget.horizontalPadding;
-    final kpiCols = widget.narrow ? 1 : (widget.wide ? 4 : 2);
+    final hPad = horizontalPadding;
+    final kpiCols = narrow ? 1 : (wide ? 4 : 2);
 
     return SingleChildScrollView(
       child: Padding(
-        padding: EdgeInsets.only(bottom: 26),
+        padding: const EdgeInsets.only(bottom: 26),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -223,7 +239,7 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        '9 positions · 5 source accounts · prices as at 01 Aug 2026, 16:10 AEST',
+                        '${all.length} positions · $distinctAccounts source accounts · $priceDateLabel',
                         style: LedgerText.mono(
                           size: 12,
                           color: c.textMuted,
@@ -237,9 +253,10 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                     children: [
                       const _ActionButton(label: 'Export CSV'),
                       const SizedBox(width: 8),
-                      const _ActionButton(
+                      _ActionButton(
                         label: 'Add transaction',
                         primary: true,
+                        onTap: onAddTransaction,
                       ),
                     ],
                   ),
@@ -250,24 +267,17 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
               padding: EdgeInsets.symmetric(horizontal: hPad),
               child: KpiStripCards(
                 columns: kpiCols,
-                tValue: money(tValue),
-                tCost: money(tCost),
-                tGain: signedMoney(tGain),
-                tGainPct: signedPct(tGain / tCost * 100),
+                tValue: moneyD(tValue),
+                tCost: moneyD(tCost),
+                tGain: signedMoneyD(tGain),
+                tGainPct: signedPctD(tGainPct),
                 tGainColor: tGainColor,
-                fy: widget.fy,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: hPad),
-              child: CompositionBar(
-                segments: segments,
-                byHolding: true,
-                byHoldingSelected: _byHolding,
-                byHoldingTap: () => setState(() => _byHolding = true),
-                bySourceTap: () => setState(() => _byHolding = false),
-                defaultCaption: defaultCaption,
+                fy: fy,
+                positions: all.length,
+                totalUnits: quantity(totalUnits),
+                transactionCount: data.transactionCount,
+                income: moneyD(data.incomeTotal),
+                frankingCredits: moneyD(data.frankingCreditTotal),
               ),
             ),
             Padding(
@@ -277,19 +287,10 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _SourceFilterRow(
-                    current: _src,
-                    onSelect: (k) => setState(() => _src = k),
-                  ),
-                  _ToggleButton(
-                    label: _group ? 'Grouped by source' : 'Group by source',
-                    active: _group,
-                    onTap: () => setState(() => _group = !_group),
-                  ),
-                  _ToggleButton(
-                    label: _color ? 'Gain colour on' : 'Gain colour off',
-                    active: _color,
-                    onTap: () => setState(() => _color = !_color),
+                  _SrcFilterBar(
+                    accounts: data.accounts,
+                    selected: src,
+                    onChanged: onSrcChanged,
                   ),
                 ],
               ),
@@ -302,14 +303,11 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                 scrollDirection: Axis.horizontal,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final fixedSum = _colWidths.fold<double>(
-                      0,
-                      (s, w) => s + w,
-                    );
+                    final fixedSum = colWidths.fold<double>(0, (s, w) => s + w);
                     final avail =
                         MediaQuery.of(context).size.width -
                         hPad * 2 -
-                        (widget.wide ? 226 : 0);
+                        (wide ? 226 : 0);
                     final symWidth = (avail - fixedSum).clamp(
                       190.0,
                       double.infinity,
@@ -317,33 +315,33 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                     final totalWidth = symWidth + fixedSum;
                     return SizedBox(
                       key: const Key('holdingsTable'),
-                      width: totalWidth < _tableMinWidth
-                          ? _tableMinWidth
+                      width: totalWidth < tableMinWidth
+                          ? tableMinWidth
                           : totalWidth,
                       child: Column(
                         children: [
                           _HeaderRow(
                             symWidth: symWidth < 190 ? 190 : symWidth,
-                            sortKey: _sortKey,
-                            desc: _desc,
-                            onSort: _sortBy,
+                            sortKey: sortKey,
+                            desc: desc,
+                            onSort: onSort,
                           ),
-                          for (final r in rows)
-                            _DataRow(
-                              row: r,
-                              symWidth: symWidth < 190 ? 190 : symWidth,
-                              color: _color,
-                              onTap: widget.onOpenDetail,
-                            ),
+                          if (rows.isEmpty)
+                            _EmptyRow(symWidth: symWidth < 190 ? 190 : symWidth)
+                          else
+                            for (final r in rows)
+                              _DataRow(
+                                row: r,
+                                symWidth: symWidth < 190 ? 190 : symWidth,
+                                onTap: () => onOpenDetail(r.holding),
+                              ),
                           _TotalsRow(
                             symWidth: symWidth < 190 ? 190 : symWidth,
-                            rowCount: rows.where((r) => true).length,
-                            positionCount: filtered.length,
-                            tValue: money(tValue),
-                            tGain: signedMoney(tGain),
-                            tGainPct: signedPct(tGain / tCost * 100),
+                            positionCount: all.length,
+                            tGain: signedMoneyD(tGain),
+                            tGainPct: signedPctD(tGainPct),
                             tGainColor: tGainColor,
-                            tCost: money(tCost),
+                            tCost: moneyD(tCost),
                           ),
                         ],
                       ),
@@ -358,29 +356,169 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                 spacing: 22,
                 runSpacing: 6,
                 children: [
-                  Text(
-                    'Cost base includes brokerage and is derived from confirmed transactions only.',
-                    style: LedgerText.mono(
-                      size: 11,
-                      color: c.textFaint,
-                      height: 1.6,
-                      tabular: false,
+                  for (final h in foreignHoldings)
+                    Text(
+                      '${h.symbol}: ${h.fxSubLine}',
+                      style: LedgerText.mono(
+                        size: 11,
+                        color: c.textFaint,
+                        height: 1.6,
+                        tabular: false,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'VOO held in USD · converted at 0.6538 (01 Aug 2026); trade-date rates retained per parcel.',
-                    style: LedgerText.mono(
-                      size: 11,
-                      color: c.textFaint,
-                      height: 1.6,
-                      tabular: false,
-                    ),
-                  ),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+String _shortDate(DateTime d) {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  return '${d.day.toString().padLeft(2, '0')} ${months[d.month - 1]} ${d.year}';
+}
+
+/// Source-account filter chip bar. Uses display-name prefix matching so a
+/// single "Stake" chip covers both "Stake AU" and "Stake US" accounts.
+/// `selected` is 'all' or a display-name prefix; `onChanged` receives the
+/// same.
+class _SrcFilterBar extends StatelessWidget {
+  const _SrcFilterBar({
+    required this.accounts,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final List<AccountRef> accounts;
+  final String selected;
+  final ValueChanged<String> onChanged;
+
+  /// Unique display-name prefixes in insertion order, deduped.
+  List<String> _prefixes() {
+    final seen = <String>{};
+    final result = <String>[];
+    for (final a in accounts) {
+      // Take up to the first space or '·' as the prefix label, so
+      // "Stake AU" and "Stake US" both map to "Stake".
+      final prefix = a.displayName.split(RegExp(r'[\s·]')).first;
+      if (seen.add(prefix)) result.add(prefix);
+    }
+    return result;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
+    final prefixes = _prefixes();
+    final chips = <({String value, String label})>[
+      (value: 'all', label: 'All sources'),
+      for (final p in prefixes) (value: p, label: p),
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: c.borderControl),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < chips.length; i++)
+            _SrcChip(
+              label: chips[i].label,
+              value: chips[i].value,
+              selected: selected == chips[i].value,
+              isLast: i == chips.length - 1,
+              onTap: () => onChanged(chips[i].value),
+              c: c,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SrcChip extends StatefulWidget {
+  const _SrcChip({
+    required this.label,
+    required this.value,
+    required this.selected,
+    required this.isLast,
+    required this.onTap,
+    required this.c,
+  });
+
+  final String label;
+  final String value;
+  final bool selected;
+  final bool isLast;
+  final VoidCallback onTap;
+  final LedgerPalette c;
+
+  @override
+  State<_SrcChip> createState() => _SrcChipState();
+}
+
+class _SrcChipState extends State<_SrcChip> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.c;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+          decoration: BoxDecoration(
+            color: widget.selected
+                ? c.surfaceActive
+                : _hover
+                    ? c.surfaceHover
+                    : c.surfaceCard,
+            border: !widget.isLast
+                ? Border(right: BorderSide(color: c.borderSubtle))
+                : null,
+          ),
+          child: Text(
+            widget.label,
+            style: LedgerText.sans(
+              size: 12,
+              color: widget.selected ? c.ink : c.textMid,
+              weight: widget.selected ? FontWeight.w500 : FontWeight.w400,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+class _EmptyRow extends StatelessWidget {
+  const _EmptyRow({required this.symWidth});
+  final double symWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 14),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: c.borderRow)),
+      ),
+      child: Text(
+        'No holdings yet. Confirm a transaction to see it here.',
+        style: LedgerText.sans(size: 13, color: c.textMuted),
       ),
     );
   }
@@ -396,6 +534,11 @@ class KpiStripCards extends StatelessWidget {
     required this.tGainPct,
     required this.tGainColor,
     required this.fy,
+    required this.positions,
+    required this.totalUnits,
+    required this.transactionCount,
+    required this.income,
+    required this.frankingCredits,
   });
 
   final int columns;
@@ -405,16 +548,27 @@ class KpiStripCards extends StatelessWidget {
   final String tGainPct;
   final Color tGainColor;
   final String fy;
+  final int positions;
+  final String totalUnits;
+  final int transactionCount;
+  final String income;
+  final String frankingCredits;
 
   @override
   Widget build(BuildContext context) {
     final c = LedgerColors.of(context);
     final cards = [
-      _Kpi('TOTAL VALUE', tValue, '9 positions · 2,727 units', c.ink, null),
+      _Kpi(
+        'TOTAL VALUE',
+        tValue,
+        '$positions positions · $totalUnits units',
+        c.ink,
+        null,
+      ),
       _Kpi(
         'TOTAL COST BASE',
         tCost,
-        'from 38 confirmed transactions',
+        'from $transactionCount confirmed transactions',
         c.ink,
         null,
       ),
@@ -427,8 +581,8 @@ class KpiStripCards extends StatelessWidget {
       ),
       _Kpi(
         'INCOME · $fy',
-        '6,412.88',
-        '+ 1,586.28 franking credits',
+        income,
+        '+ $frankingCredits franking credits',
         c.ink,
         null,
       ),
@@ -532,93 +686,10 @@ class _Kpi {
 }
 
 class _ActionButton extends StatelessWidget {
-  const _ActionButton({required this.label, this.primary = false});
+  const _ActionButton({required this.label, this.primary = false, this.onTap});
   final String label;
   final bool primary;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = LedgerColors.of(context);
-    return Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 13),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: primary ? c.ink : c.surfaceCard,
-        border: Border.all(color: primary ? c.ink : c.borderButton),
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Text(
-        label,
-        style: LedgerText.sans(
-          size: 12.5,
-          weight: primary ? FontWeight.w500 : FontWeight.w400,
-          color: primary ? c.surfacePage : c.textStrong,
-        ),
-      ),
-    );
-  }
-}
-
-class _SourceFilterRow extends StatelessWidget {
-  const _SourceFilterRow({required this.current, required this.onSelect});
-  final String current;
-  final ValueChanged<String> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = LedgerColors.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: c.borderControl),
-        borderRadius: BorderRadius.circular(5),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < SampleData.sourceFilters.length; i++)
-            GestureDetector(
-              onTap: () => onSelect(SampleData.sourceFilters[i].key),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 11,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: current == SampleData.sourceFilters[i].key
-                      ? c.surfaceActive
-                      : c.surfaceCard,
-                  border: i != SampleData.sourceFilters.length - 1
-                      ? Border(right: BorderSide(color: c.borderRow))
-                      : null,
-                ),
-                child: Text(
-                  SampleData.sourceFilters[i].value,
-                  style: LedgerText.sans(
-                    size: 12,
-                    color: current == SampleData.sourceFilters[i].key
-                        ? c.ink
-                        : c.textMid,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ToggleButton extends StatelessWidget {
-  const _ToggleButton({
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -626,17 +697,21 @@ class _ToggleButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 29,
-        padding: const EdgeInsets.symmetric(horizontal: 11),
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 13),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: active ? c.surfaceActive : c.surfaceCard,
-          border: Border.all(color: c.borderControl),
+          color: primary ? c.ink : c.surfaceCard,
+          border: Border.all(color: primary ? c.ink : c.borderButton),
           borderRadius: BorderRadius.circular(5),
         ),
         child: Text(
           label,
-          style: LedgerText.sans(size: 12, color: c.textStrong),
+          style: LedgerText.sans(
+            size: 12.5,
+            weight: primary ? FontWeight.w500 : FontWeight.w400,
+            color: primary ? c.surfacePage : c.textStrong,
+          ),
         ),
       ),
     );
@@ -680,10 +755,7 @@ class _HeaderRow extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  label,
-                  style: LedgerText.columnLabel(color: c.textMuted),
-                ),
+                Text(label, style: LedgerText.columnLabel(color: c.textMuted)),
                 if (active)
                   Text(
                     desc ? ' ↓' : ' ↑',
@@ -708,14 +780,13 @@ class _HeaderRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          cell('SYMBOL / NAME', symWidth, _SortKey.sym),
+          cell('SYMBOL / CODE', symWidth, _SortKey.sym),
           cell('UNITS', 82, _SortKey.units, alignRight: true),
-          cell('AVG COST', 100, _SortKey.avg, alignRight: true),
-          cell('PRICE', 92, _SortKey.price, alignRight: true),
-          cell('MARKET VALUE', 124, _SortKey.value, alignRight: true),
-          cell('UNREALISED', 128, _SortKey.gain, alignRight: true),
-          cell('%', 84, _SortKey.pct, alignRight: true),
-          cell('SOURCE ACCOUNT', 168, _SortKey.src),
+          cell('PURCHASE \$', 100, _SortKey.avg, alignRight: true),
+          cell('LAST \$', 92, _SortKey.price, alignRight: true),
+          cell('PROFIT/LOSS \$', 128, _SortKey.gain, alignRight: true),
+          cell('PROFIT/LOSS %', 84, _SortKey.pct, alignRight: true),
+          cell('SOURCE', 168, _SortKey.src),
           const SizedBox(width: 30),
         ],
       ),
@@ -727,53 +798,20 @@ class _DataRow extends StatelessWidget {
   const _DataRow({
     required this.row,
     required this.symWidth,
-    required this.color,
     required this.onTap,
   });
   final _Row row;
   final double symWidth;
-  final bool color;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = LedgerColors.of(context);
     final h = row.holding;
-    final gc = color ? (h.gain >= 0 ? c.positive : c.negative) : c.ink;
+    final gc = h.gain >= Decimal.zero ? c.positive : c.negative;
 
     return Column(
       children: [
-        if (row.groupHead != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-            decoration: BoxDecoration(
-              color: c.surfaceGroupHead,
-              border: Border(bottom: BorderSide(color: c.borderSubtle)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  row.groupHead!,
-                  style: LedgerText.mono(
-                    size: 10.5,
-                    weight: FontWeight.w500,
-                    color: c.textMid,
-                    letterSpacing: 0.8,
-                    tabular: false,
-                  ),
-                ),
-                Text(
-                  row.groupMeta!,
-                  style: LedgerText.mono(
-                    size: 11,
-                    color: c.textMuted,
-                    tabular: false,
-                  ),
-                ),
-              ],
-            ),
-          ),
         GestureDetector(
           onTap: onTap,
           child: Container(
@@ -795,7 +833,7 @@ class _DataRow extends StatelessWidget {
                       textBaseline: TextBaseline.alphabetic,
                       children: [
                         Text(
-                          h.sym,
+                          h.symbol,
                           style: LedgerText.mono(
                             size: 12.5,
                             letterSpacing: 0.12,
@@ -817,11 +855,11 @@ class _DataRow extends StatelessWidget {
                                   color: c.textStrong,
                                 ),
                               ),
-                              if (h.sub != null)
+                              if (h.fxSubLine != null)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 2),
                                   child: Text(
-                                    h.sub!,
+                                    h.fxSubLine!,
                                     overflow: TextOverflow.ellipsis,
                                     style: LedgerText.mono(
                                       size: 10.5,
@@ -837,12 +875,11 @@ class _DataRow extends StatelessWidget {
                     ),
                   ),
                 ),
-                _num(c, h.units.toString(), 82),
-                _num(c, money(h.avgCost), 100),
-                _num(c, money(h.price), 92, color: c.textMid),
-                _num(c, money(h.value), 124),
-                _num(c, signedMoney(h.gain), 128, color: gc),
-                _num(c, signedPct(h.gainPct), 84, color: gc, size: 12),
+                _num(c, quantity(h.units), 82),
+                _num(c, moneyD(h.avgCost), 100),
+                _num(c, moneyD(h.price), 92, color: c.textMid),
+                _num(c, signedMoneyD(h.gain), 128, color: gc),
+                _num(c, signedPctD(h.gainPct), 84, color: gc, size: 12),
                 SizedBox(
                   width: 168,
                   child: Padding(
@@ -851,8 +888,8 @@ class _DataRow extends StatelessWidget {
                       vertical: 9,
                     ),
                     child: SourceDotChip(
-                      label: h.source,
-                      dotColor: c.sourceDot(h.source),
+                      label: h.accountDisplayName,
+                      dotColor: c.sourceDot(h.accountDisplayName),
                     ),
                   ),
                 ),
@@ -886,10 +923,7 @@ class _DataRow extends StatelessWidget {
         child: Text(
           text,
           textAlign: TextAlign.right,
-          style: LedgerText.mono(
-            size: size,
-            color: color ?? c.textStrong,
-          ),
+          style: LedgerText.mono(size: size, color: color ?? c.textStrong),
         ),
       ),
     );
@@ -899,9 +933,7 @@ class _DataRow extends StatelessWidget {
 class _TotalsRow extends StatelessWidget {
   const _TotalsRow({
     required this.symWidth,
-    required this.rowCount,
     required this.positionCount,
-    required this.tValue,
     required this.tGain,
     required this.tGainPct,
     required this.tGainColor,
@@ -909,9 +941,7 @@ class _TotalsRow extends StatelessWidget {
   });
 
   final double symWidth;
-  final int rowCount;
   final int positionCount;
-  final String tValue;
   final String tGain;
   final String tGainPct;
   final Color tGainColor;
@@ -946,21 +976,6 @@ class _TotalsRow extends StatelessWidget {
           const SizedBox(width: 82),
           const SizedBox(width: 100),
           const SizedBox(width: 92),
-          SizedBox(
-            width: 124,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Text(
-                tValue,
-                textAlign: TextAlign.right,
-                style: LedgerText.mono(
-                  size: 13,
-                  weight: FontWeight.w500,
-                  color: c.textStrong,
-                ),
-              ),
-            ),
-          ),
           SizedBox(
             width: 128,
             child: Padding(

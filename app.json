@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Ledger",
+    "slug": "portfolio-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "ledger",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.portfolioapp.ledger"
+    },
+    "android": {
+      "package": "com.portfolioapp.ledger",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": ["expo-router", "expo-font", "expo-splash-screen"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

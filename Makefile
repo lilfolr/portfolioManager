@@ -5,6 +5,7 @@ DENO_IMAGE ?= denoland/deno:latest
 ENV_FILE ?= env/local.json
 
 .PHONY: help get analyze test format run run-web build-web clean \
+	js-install js-typecheck js-lint js-test js-web js-build-web \
 	db-up db-down db-reset db-status db-diff db-test-rls \
 	fn-serve fn-test
 
@@ -35,6 +36,30 @@ build-web: ## flutter build web --release, reads Supabase config from $ENV_FILE
 
 clean: ## flutter clean
 	flutter clean
+
+# --- Expo client (React Native + react-native-web) -------------------------
+#
+# These run alongside the Flutter targets above during the migration; the
+# Flutter ones are removed once the port is complete. Supabase config comes
+# from .env.local (see .env.example), not --dart-define.
+
+js-install: ## npm install
+	npm install
+
+js-typecheck: ## tsc --noEmit
+	npm run typecheck
+
+js-lint: ## eslint
+	npm run lint
+
+js-test: ## jest
+	npm test
+
+js-web: ## expo start --web
+	npm run web
+
+js-build-web: ## expo export --platform web
+	npm run build:web
 
 # --- Backend (Supabase: Postgres + RLS + Edge Functions) -------------------
 #

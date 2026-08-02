@@ -47,3 +47,16 @@ app.*.map.json
 # Local Supabase connection config (anon key + URL from `make db-status`).
 # See env/local.example.json for the expected shape.
 /env/local.json
+
+# Node / Expo
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+*.tsbuildinfo
+
+# Local Supabase connection config for the Expo client. See .env.example.
+.env
+.env.local
+.env*.local

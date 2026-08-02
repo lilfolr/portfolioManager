@@ -173,8 +173,11 @@ year.
 
 ## Stack
 
-TypeScript throughout. PostgreSQL. AWS. Web-first, installable as a PWA. Keep
-the codebase Capacitor-compatible in case an App Store presence is wanted later.
+TypeScript throughout. PostgreSQL. AWS. Web-first, installable as a PWA.
+
+The client is Expo (React Native) with Expo Router, NativeWind, TanStack Query
+and `@supabase/supabase-js`, rendering to web via react-native-web as well as
+iOS and Android — so an App Store presence needs no separate wrapper.
 
 Market data: end-of-day only. **Check redistribution rights in the licence
 before choosing a vendor.** Consuming data and displaying it to your own users
@@ -188,7 +191,21 @@ are different permissions and differ by orders of magnitude in cost.
 - All amounts display in AUD, with original currency and FX rate shown for
   foreign holdings
 - Prefer explicit over inferred everywhere a tax outcome is involved
-- Every screen and component must support light and dark theme. Resolve
-  colours from the active theme (`LedgerColors.of(context)` /
-  `LedgerPalette`) — never hardcode a `Colors.*` value or literal hex,
-  and never give a colour parameter a light-only default
+- Every screen and component must support light and dark theme, and colours
+  come only from `src/theme/palette.js`. It is the single source of truth:
+  `tailwind.config.js` requires it to generate both the CSS custom properties
+  and the utility class names, and app code imports the same object for the
+  cases a class can't express (the composition ramp, the source-dot map).
+  - Use a semantic utility class — `className="bg-surface-card text-strong"`.
+    Tokens resolve through CSS variables swapped at the root, so there are no
+    `dark:` prefixes anywhere.
+  - Where a colour must be a value rather than a class, use
+    `useLedgerColors()` / `useCompRamp()` / `useSourceDot()`.
+  - Never a literal hex outside `palette.js`, and never a light-only default.
+    The Tailwind config replaces `theme.colors` rather than extending it, so
+    Tailwind's default palette does not exist and `bg-white` produces no style
+    at all; an eslint rule rejects hex literals as well.
+- Text renders through the `src/ui/text.tsx` component set (`Sans`, `Mono`,
+  `ColumnLabel`, `Eyebrow`), never a bare `<Text>`. React Native has no
+  inherited text style, so an unstyled node would be invisible in one theme.
+  Figures always use `Mono` — the tables depend on tabular numerals.

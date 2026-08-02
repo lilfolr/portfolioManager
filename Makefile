@@ -1,11 +1,7 @@
-CHROME_EXECUTABLE ?= /usr/bin/chromium
-WEB_PORT ?= 8765
 DB_URL ?= postgresql://postgres:postgres@127.0.0.1:54362/postgres
 DENO_IMAGE ?= denoland/deno:latest
-ENV_FILE ?= env/local.json
 
-.PHONY: help get analyze test format run run-web build-web clean \
-	js-install js-typecheck js-lint js-test js-web js-build-web \
+.PHONY: help install typecheck lint test format web build-web ios android \
 	db-up db-down db-reset db-status db-diff db-test-rls \
 	fn-serve fn-test
 
@@ -13,53 +9,36 @@ help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
-get: ## flutter pub get
-	flutter pub get
-
-analyze: ## flutter analyze
-	flutter analyze
-
-test: ## flutter test
-	flutter test
-
-format: ## dart format lib test
-	dart format lib test
-
-run: ## flutter run (device picker), reads Supabase config from $ENV_FILE
-	flutter run --dart-define-from-file=$(ENV_FILE)
-
-run-web: ## flutter run -d chrome on $WEB_PORT (default 8765), reads Supabase config from $ENV_FILE
-	CHROME_EXECUTABLE=$(CHROME_EXECUTABLE) flutter run -d chrome --web-port=$(WEB_PORT) --dart-define-from-file=$(ENV_FILE)
-
-build-web: ## flutter build web --release, reads Supabase config from $ENV_FILE
-	flutter build web --release --dart-define-from-file=$(ENV_FILE)
-
-clean: ## flutter clean
-	flutter clean
-
 # --- Expo client (React Native + react-native-web) -------------------------
 #
-# These run alongside the Flutter targets above during the migration; the
-# Flutter ones are removed once the port is complete. Supabase config comes
-# from .env.local (see .env.example), not --dart-define.
+# Supabase config comes from .env.local; see .env.example and `make db-status`.
 
-js-install: ## npm install
+install: ## npm install
 	npm install
 
-js-typecheck: ## tsc --noEmit
+typecheck: ## tsc --noEmit
 	npm run typecheck
 
-js-lint: ## eslint
+lint: ## eslint
 	npm run lint
 
-js-test: ## jest
+test: ## jest
 	npm test
 
-js-web: ## expo start --web
+format: ## prettier --write
+	npx prettier --write "app/**/*.tsx" "src/**/*.{ts,tsx,js}" "__tests__/**/*.{ts,tsx}"
+
+web: ## expo start --web
 	npm run web
 
-js-build-web: ## expo export --platform web
+build-web: ## expo export --platform web
 	npm run build:web
+
+ios: ## expo start --ios
+	npm run ios
+
+android: ## expo start --android
+	npm run android
 
 # --- Backend (Supabase: Postgres + RLS + Edge Functions) -------------------
 #

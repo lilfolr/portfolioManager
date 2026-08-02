@@ -7,9 +7,9 @@ derived, never edited directly. See `CLAUDE.md` for the full domain rules.
 ## Backend
 
 Postgres + row-level security via Supabase, run locally with the Supabase
-CLI. No separate API server — the Flutter client talks to PostgREST
-directly, with RLS as the tenant boundary and Supabase Edge Functions for
-the parcel engine (the one thing that can't live in SQL).
+CLI. No separate API server — the client talks to PostgREST directly, with
+RLS as the tenant boundary and Supabase Edge Functions for the parcel engine
+(the one thing that can't live in SQL).
 
 ```
 supabase/
@@ -60,53 +60,93 @@ make db-test-rls   # RLS negative tests: cross-tenant isolation, anon lockout,
 
 Both are pure/local — no live Supabase project required beyond `make db-up`.
 
-## Flutter app
+## Client
 
-The Holdings and Holding Detail screens read live data — accounts,
-instruments, prices, transactions, income and computed parcels — from the
-backend above. There is no fixture/sample-data mode; a backend must be
+Expo (React Native) with Expo Router, rendering to web via react-native-web as
+well as iOS and Android. Web is the primary surface: the ledger is a dense,
+spreadsheet-like set of tables that assumes a wide viewport, and the app is
+intended to be installable as a PWA.
+
+The Holdings, Holding Detail and Transaction Entry screens read live data —
+accounts, instruments, prices, transactions, income and computed parcels —
+from the backend above. There is no fixture/sample-data mode; a backend must be
 running (`make db-up && make db-reset && make fn-serve`) for the app to show
 anything, and an empty ledger renders as an empty state rather than an error.
 
 ### Setup
 
 ```
-cp env/local.example.json env/local.json   # once
-make db-status                              # copy the anon key into env/local.json
-make get                                    # flutter pub get
+cp .env.example .env.local   # once
+make db-status                # copy the anon key into .env.local
+make install                  # npm install
 ```
+
+The anon key is public by design — RLS is the tenant boundary, not client-side
+secrecy — which is why it is an `EXPO_PUBLIC_` variable inlined into the bundle.
 
 ### Run
 
 ```
-make run-web       # flutter run -d chrome, reads Supabase config from env/local.json
-make run           # flutter run (device picker)
+make web          # expo start --web
+make ios          # expo start --ios
+make android      # expo start --android
 ```
 
 Sign in with one of the local dev users from `supabase/seed.sql`
 (`alice@example.com` / `password123`).
 
-### Data layer
+### Layout
 
 ```
-lib/data/
-  api.dart                 thin wrappers over Supabase.instance.client
-  portfolio_repository.dart composes api.dart reads into the screens' view models
-lib/models/portfolio.dart  Decimal-typed domain models (never double, per CLAUDE.md)
+app/                       expo-router routes only, no logic
+  (auth)/login             email + password
+  (app)/holdings           the ledger table
+  (app)/holdings/[instrumentId]?accountId=…
+  (app)/transactions/new   manual entry
+src/
+  domain/                  Decimal config, formatters, models, wire types
+  data/                    supabase client, api reads, repository, query hooks
+  theme/                   palette.js + the NativeWind token wiring
+  ui/                      LedgerTable, text components, chips, buttons
+  features/                one folder per screen
 ```
 
-`HoldingsScreen` fetches via `fquery`'s `QueryBuilder` (mounts once, at the
-app root). `HoldingDetailScreen` fetches via a plain `FutureBuilder` — its
-data can't use `QueryBuilder` because it first mounts as a side effect of a
-row tap in a different widget's rebuild, and fquery's observer calls
-`setState` synchronously from `didChangeDependencies` in that situation,
-which Flutter rejects. Both screens take an optional `fetchData` override
-(see `test/widget_test.dart`) so widget tests run against fixtures instead
-of a live Supabase project.
+`src/domain/` holds pure logic with no React and no IO: `format.ts`,
+`models.ts`, `financial-year.ts`, and the `Decimal` configuration that must
+stay in step with the engine's own. `src/data/repository.ts` composes the raw
+reads in `api.ts` into the view models each screen needs, and each of those
+sits behind one react-query hook in `queries.ts`.
+
+`src/domain/wire.ts` re-exports the engine's `types.ts` by its Deno-style
+specifier rather than keeping a second copy of the shapes the `parcels`
+function returns. The import is type-only, so Babel erases it and Metro never
+resolves the path — but `tsc` does, which means a change to the engine's
+contract breaks the client's typecheck instead of surfacing at runtime.
+
+### Colours
+
+`src/theme/palette.js` is the single source of truth for every colour. It is
+plain CommonJS so `tailwind.config.js` can `require()` it under Node to
+generate both the CSS custom properties and the utility class names, while app
+code imports the same object for the cases a class can't express (the
+composition ramp, the source-dot map keyed by account name).
+
+Tokens resolve through CSS variables swapped at the root, so components write
+`className="bg-surface-card"` with no `dark:` prefixes anywhere. The Tailwind
+config **replaces** `theme.colors` rather than extending it, so Tailwind's
+default palette does not exist — `bg-white` and `text-black` produce no style
+at all — and an eslint rule rejects colour literals outside `palette.js`.
 
 ### Testing
 
 ```
-make test          # flutter test — widget tests use fixtures, not a live backend
-make analyze        # flutter analyze
+make test          # jest
+make typecheck     # tsc --noEmit
+make lint          # eslint
 ```
+
+Tests use fixtures, not a live backend. Route-level tests mount the real
+`app/` tree with only the repository and the auth client mocked, so routing,
+layouts, redirects and the responsive switch are exercised for real. Note that
+`renderRouter` can only be called once per module registry, so those tests are
+one scenario per file — see `__tests__/helpers/router.tsx`.

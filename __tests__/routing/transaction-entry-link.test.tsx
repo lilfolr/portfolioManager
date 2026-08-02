@@ -23,7 +23,7 @@ it('deep-links straight to transaction entry with the right breadcrumb', async (
   const app = await renderApp('/transactions/new');
 
   await waitFor(() =>
-    expect(screen.getByTestId('transactionEntryPlaceholder')).toBeOnTheScreen(),
+    expect(screen.getByText('New transaction')).toBeOnTheScreen(),
   );
   expect(app.getPathname()).toBe('/transactions/new');
   expect(screen.getByTestId('breadcrumb')).toHaveTextContent(

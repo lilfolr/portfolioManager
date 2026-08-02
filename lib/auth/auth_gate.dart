@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app_shell.dart';
+import '../theme/theme_controller.dart';
 import 'login_screen.dart';
 
 /// Shows [LoginScreen] until there is a Supabase session, then [LedgerAppShell].
@@ -10,7 +11,9 @@ import 'login_screen.dart';
 /// session (e.g. on page reload for web) renders the app immediately instead
 /// of flashing the login screen first.
 class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
+  const AuthGate({super.key, required this.themeController});
+
+  final ThemeController themeController;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +26,9 @@ class AuthGate extends StatelessWidget {
       ),
       builder: (context, snapshot) {
         final session = snapshot.data?.session ?? auth.currentSession;
-        return session == null ? const LoginScreen() : const LedgerAppShell();
+        return session == null
+            ? const LoginScreen()
+            : LedgerAppShell(themeController: themeController);
       },
     );
   }

@@ -11,6 +11,7 @@ class NotInPassScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 80),
@@ -26,17 +27,14 @@ class NotInPassScreen extends StatelessWidget {
                   size: 13,
                   weight: FontWeight.w500,
                   height: 1.4,
+                  color: c.textStrong,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'This hi-fi pass covers the holdings dashboard and holding detail. The other seven screens exist as wireframes.',
                 textAlign: TextAlign.center,
-                style: LedgerText.sans(
-                  size: 12,
-                  color: LedgerColors.textMid,
-                  height: 1.6,
-                ),
+                style: LedgerText.sans(size: 12, color: c.textMid, height: 1.6),
               ),
               const SizedBox(height: 16),
               GestureDetector(
@@ -46,13 +44,13 @@ class NotInPassScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 13),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: LedgerColors.borderButton),
+                    color: c.surfaceCard,
+                    border: Border.all(color: c.borderButton),
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: Text(
                     'Back to holdings',
-                    style: LedgerText.sans(size: 12.5),
+                    style: LedgerText.sans(size: 12.5, color: c.textStrong),
                   ),
                 ),
               ),

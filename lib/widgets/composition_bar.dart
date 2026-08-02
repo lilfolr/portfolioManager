@@ -59,6 +59,7 @@ class _CompositionBarState extends State<CompositionBar> {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     final active = _active != null && _active! < widget.segments.length
         ? widget.segments[_active!]
         : null;
@@ -69,7 +70,7 @@ class _CompositionBarState extends State<CompositionBar> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       decoration: BoxDecoration(
-        border: Border.all(color: LedgerColors.borderSubtle),
+        border: Border.all(color: c.borderSubtle),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Column(
@@ -80,16 +81,18 @@ class _CompositionBarState extends State<CompositionBar> {
               Expanded(
                 child: Text(
                   'COMPOSITION · SHARE OF MARKET VALUE',
-                  style: LedgerText.eyebrow(),
+                  style: LedgerText.eyebrow(color: c.textFaint),
                 ),
               ),
               _modeButton(
+                c,
                 'by holding',
                 widget.byHoldingSelected,
                 widget.byHoldingTap,
               ),
               const SizedBox(width: 2),
               _modeButton(
+                c,
                 'by source account',
                 !widget.byHoldingSelected,
                 widget.bySourceTap,
@@ -156,7 +159,7 @@ class _CompositionBarState extends State<CompositionBar> {
                               widget.segments[i].label,
                               style: LedgerText.mono(
                                 size: 11,
-                                color: LedgerColors.textStrong,
+                                color: c.textStrong,
                                 height: 1.4,
                               ),
                             ),
@@ -165,7 +168,7 @@ class _CompositionBarState extends State<CompositionBar> {
                               widget.segments[i].pctLabel,
                               style: LedgerText.mono(
                                 size: 11,
-                                color: LedgerColors.textMid,
+                                color: c.textMid,
                                 height: 1.4,
                               ),
                             ),
@@ -181,7 +184,7 @@ class _CompositionBarState extends State<CompositionBar> {
                 textAlign: TextAlign.right,
                 style: LedgerText.mono(
                   size: 11,
-                  color: LedgerColors.textMuted,
+                  color: c.textMuted,
                   height: 1.5,
                   tabular: false,
                 ),
@@ -193,7 +196,12 @@ class _CompositionBarState extends State<CompositionBar> {
     );
   }
 
-  Widget _modeButton(String label, bool active, VoidCallback onTap) {
+  Widget _modeButton(
+    LedgerPalette c,
+    String label,
+    bool active,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: MouseRegion(
@@ -201,17 +209,13 @@ class _CompositionBarState extends State<CompositionBar> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
           decoration: BoxDecoration(
-            color: active ? LedgerColors.surfaceActive : Colors.white,
-            border: Border.all(color: LedgerColors.borderSubtle),
+            color: active ? c.surfaceActive : c.surfaceCard,
+            border: Border.all(color: c.borderSubtle),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Text(
             label,
-            style: LedgerText.mono(
-              size: 11,
-              color: LedgerColors.textMid,
-              tabular: false,
-            ),
+            style: LedgerText.mono(size: 11, color: c.textMid, tabular: false),
           ),
         ),
       ),

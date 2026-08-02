@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/ledger_theme.dart';
+import '../theme/theme_controller.dart';
 
 /// Fixed-width left sidebar: brand mark, portfolio nav, ledger-input nav,
 /// and the user/footer block. Shown only at >=1000px; below that the
@@ -14,6 +15,7 @@ class Sidebar extends StatelessWidget {
     required this.onOther,
     required this.isHoldings,
     required this.isDetail,
+    required this.themeController,
   });
 
   final VoidCallback onHoldings;
@@ -21,14 +23,16 @@ class Sidebar extends StatelessWidget {
   final VoidCallback onOther;
   final bool isHoldings;
   final bool isDetail;
+  final ThemeController themeController;
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     return Container(
       width: 226,
-      decoration: const BoxDecoration(
-        color: LedgerColors.surfaceSidebar,
-        border: Border(right: BorderSide(color: LedgerColors.borderSidebar)),
+      decoration: BoxDecoration(
+        color: c.surfaceSidebar,
+        border: Border(right: BorderSide(color: c.borderSidebar)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -41,7 +45,7 @@ class Sidebar extends StatelessWidget {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: LedgerColors.ink,
+                    color: c.ink,
                     borderRadius: BorderRadius.circular(5),
                   ),
                   alignment: Alignment.center,
@@ -50,7 +54,7 @@ class Sidebar extends StatelessWidget {
                     style: LedgerText.mono(
                       size: 11,
                       weight: FontWeight.w500,
-                      color: LedgerColors.surfacePage,
+                      color: c.surfacePage,
                     ),
                   ),
                 ),
@@ -61,12 +65,13 @@ class Sidebar extends StatelessWidget {
                     size: 13,
                     weight: FontWeight.w600,
                     letterSpacing: -0.13,
+                    color: c.textStrong,
                   ),
                 ),
               ],
             ),
           ),
-          const _SidebarLabel('PORTFOLIO'),
+          _SidebarLabel('PORTFOLIO'),
           _NavItem(
             label: 'Holdings',
             selected: isHoldings,
@@ -83,7 +88,7 @@ class Sidebar extends StatelessWidget {
           _NavItem(label: 'Income summary', selected: false, onTap: onOther),
           _NavItem(label: 'Capital gains', selected: false, onTap: onOther),
           _NavItem(label: 'Property', selected: false, onTap: onOther),
-          const _SidebarLabel('LEDGER INPUT'),
+          _SidebarLabel('LEDGER INPUT'),
           _NavItem(
             label: 'Import review',
             selected: false,
@@ -93,7 +98,7 @@ class Sidebar extends StatelessWidget {
           _NavItem(label: 'Import sources', selected: false, onTap: onOther),
           _NavItem(label: 'Transaction entry', selected: false, onTap: onOther),
           const Spacer(),
-          const _UserFooter(),
+          _UserFooter(themeController: themeController),
         ],
       ),
     );
@@ -106,18 +111,20 @@ class _SidebarLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
-      child: Text(text, style: LedgerText.eyebrow()),
+      child: Text(text, style: LedgerText.eyebrow(color: c.textFaint)),
     );
   }
 }
 
 /// Signed-in user block: avatar initials + email derived from the Supabase
-/// session, plus sign-out. Replaces the previous hardcoded 'JD' / 'J. Devlin'
-/// placeholder.
+/// session, plus sign-out and the theme mode switcher.
 class _UserFooter extends StatelessWidget {
-  const _UserFooter();
+  const _UserFooter({required this.themeController});
+
+  final ThemeController themeController;
 
   String _initials(String email) {
     final local = email.split('@').first;
@@ -129,6 +136,7 @@ class _UserFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     // Guard against Supabase not being initialized: widget tests pump
     // [LedgerAppShell] directly (see test/widget_test.dart) without running
     // main()'s Supabase.initialize(), so this must degrade gracefully rather
@@ -142,8 +150,8 @@ class _UserFooter extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: LedgerColors.borderSubtle)),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: c.borderSubtle)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,8 +162,8 @@ class _UserFooter extends StatelessWidget {
                 width: 22,
                 height: 22,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE7E3D9),
-                  border: Border.all(color: const Color(0xFFDCD7CB)),
+                  color: c.avatarBg,
+                  border: Border.all(color: c.avatarBorder),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -164,7 +172,7 @@ class _UserFooter extends StatelessWidget {
                   style: LedgerText.mono(
                     size: 9.5,
                     weight: FontWeight.w500,
-                    color: LedgerColors.textMid,
+                    color: c.textMid,
                     tabular: false,
                   ),
                 ),
@@ -174,7 +182,7 @@ class _UserFooter extends StatelessWidget {
                 child: Text(
                   email,
                   overflow: TextOverflow.ellipsis,
-                  style: LedgerText.sans(size: 12, color: LedgerColors.textMid),
+                  style: LedgerText.sans(size: 12, color: c.textMid),
                 ),
               ),
               GestureDetector(
@@ -187,22 +195,90 @@ class _UserFooter extends StatelessWidget {
                 },
                 child: Text(
                   'Sign out',
-                  style: LedgerText.sans(size: 11.5, color: LedgerColors.link),
+                  style: LedgerText.sans(size: 11.5, color: c.link),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
+          _ThemeModeSwitcher(themeController: themeController),
+          const SizedBox(height: 10),
           Text(
             'All amounts AUD\nLedger current to 01 Aug 2026',
             style: LedgerText.mono(
               size: 10,
-              color: LedgerColors.textFaint,
+              color: c.textFaint,
               height: 1.5,
               tabular: false,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Three-way System / Light / Dark control, styled as a small segmented row
+/// to match the sidebar's other controls.
+class _ThemeModeSwitcher extends StatelessWidget {
+  const _ThemeModeSwitcher({required this.themeController});
+
+  final ThemeController themeController;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeController,
+      builder: (context, mode, _) {
+        return Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: c.surfaceHover,
+            border: Border.all(color: c.borderControl),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            children: [
+              _modeButton(context, c, ThemeMode.system, 'System', mode),
+              _modeButton(context, c, ThemeMode.light, 'Light', mode),
+              _modeButton(context, c, ThemeMode.dark, 'Dark', mode),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _modeButton(
+    BuildContext context,
+    LedgerPalette c,
+    ThemeMode value,
+    String label,
+    ThemeMode active,
+  ) {
+    final selected = value == active;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => themeController.setMode(value),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? c.surfaceCard : Colors.transparent,
+            border: selected ? Border.all(color: c.borderButton) : null,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            label,
+            style: LedgerText.sans(
+              size: 10.5,
+              weight: selected ? FontWeight.w500 : FontWeight.w400,
+              color: selected ? c.textStrong : c.textMuted,
+              tabular: false,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -236,6 +312,7 @@ class _NavItemState extends State<_NavItem> {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
@@ -243,7 +320,7 @@ class _NavItemState extends State<_NavItem> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
-          color: _hover ? const Color(0xFFF1EFE9) : Colors.transparent,
+          color: _hover ? c.surfaceHover : Colors.transparent,
           padding: EdgeInsets.fromLTRB(
             widget.indent ? 30 : 18,
             widget.indent ? 7 : 8,
@@ -258,17 +335,14 @@ class _NavItemState extends State<_NavItem> {
                   left: widget.indent ? -12 : 0,
                   top: 0,
                   bottom: 0,
-                  child: Container(width: 2, color: LedgerColors.link),
+                  child: Container(width: 2, color: c.link),
                 ),
               Row(
                 children: [
                   if (widget.symbol != null) ...[
                     Text(
                       widget.symbol!,
-                      style: LedgerText.mono(
-                        size: 11.5,
-                        color: LedgerColors.textStrong,
-                      ),
+                      style: LedgerText.mono(size: 11.5, color: c.textStrong),
                     ),
                     const SizedBox(width: 9),
                     Flexible(
@@ -277,7 +351,7 @@ class _NavItemState extends State<_NavItem> {
                         overflow: TextOverflow.ellipsis,
                         style: LedgerText.sans(
                           size: 12.5,
-                          color: LedgerColors.textMuted,
+                          color: c.textMuted,
                           tabular: false,
                         ),
                       ),
@@ -291,7 +365,7 @@ class _NavItemState extends State<_NavItem> {
                           weight: widget.bold
                               ? FontWeight.w500
                               : FontWeight.w400,
-                          color: LedgerColors.textStrong,
+                          color: c.textStrong,
                           tabular: false,
                         ),
                       ),
@@ -303,8 +377,8 @@ class _NavItemState extends State<_NavItem> {
                         vertical: 1,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE9EAF2),
-                        border: Border.all(color: const Color(0xFFD3D7E6)),
+                        color: c.badgeBg,
+                        border: Border.all(color: c.badgeBorder),
                         borderRadius: BorderRadius.circular(9),
                       ),
                       child: Text(
@@ -312,7 +386,7 @@ class _NavItemState extends State<_NavItem> {
                         style: LedgerText.mono(
                           size: 10,
                           weight: FontWeight.w500,
-                          color: LedgerColors.link,
+                          color: c.link,
                           height: 1.5,
                           tabular: false,
                         ),
@@ -343,23 +417,24 @@ class MobileNavChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        color: LedgerColors.surfaceSidebar,
-        border: Border(bottom: BorderSide(color: LedgerColors.borderSidebar)),
+      decoration: BoxDecoration(
+        color: c.surfaceSidebar,
+        border: Border(bottom: BorderSide(color: c.borderSidebar)),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _chip('Holdings', onHoldings, bold: true),
+            _chip(c, 'Holdings', onHoldings, bold: true),
             const SizedBox(width: 6),
-            _chip('VAS detail', onDetail),
+            _chip(c, 'VAS detail', onDetail),
             const SizedBox(width: 6),
-            _chip('Income', onOther, muted: true),
+            _chip(c, 'Income', onOther, muted: true),
             const SizedBox(width: 6),
-            _chip('Review · 7', onOther, muted: true),
+            _chip(c, 'Review · 7', onOther, muted: true),
           ],
         ),
       ),
@@ -367,6 +442,7 @@ class MobileNavChips extends StatelessWidget {
   }
 
   Widget _chip(
+    LedgerPalette c,
     String label,
     VoidCallback onTap, {
     bool bold = false,
@@ -377,8 +453,8 @@ class MobileNavChips extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: LedgerColors.borderButton),
+          color: c.surfaceCard,
+          border: Border.all(color: c.borderButton),
           borderRadius: BorderRadius.circular(5),
         ),
         child: Text(
@@ -386,7 +462,7 @@ class MobileNavChips extends StatelessWidget {
           style: LedgerText.sans(
             size: 12,
             weight: bold ? FontWeight.w500 : FontWeight.w400,
-            color: muted ? LedgerColors.textMid : LedgerColors.textStrong,
+            color: muted ? c.textMid : c.textStrong,
           ),
         ),
       ),

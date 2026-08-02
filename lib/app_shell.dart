@@ -3,6 +3,7 @@ import 'screens/holding_detail_screen.dart';
 import 'screens/holdings_screen.dart';
 import 'screens/not_in_pass_screen.dart';
 import 'theme/ledger_theme.dart';
+import 'theme/theme_controller.dart';
 import 'widgets/sidebar_nav.dart';
 import 'widgets/top_bar.dart';
 
@@ -14,7 +15,9 @@ enum LedgerScreen { holdings, detail, other }
 /// live here; each screen owns its own screen-local state (sort, filters,
 /// tabs) internally.
 class LedgerAppShell extends StatefulWidget {
-  const LedgerAppShell({super.key});
+  const LedgerAppShell({super.key, required this.themeController});
+
+  final ThemeController themeController;
 
   @override
   State<LedgerAppShell> createState() => _LedgerAppShellState();
@@ -39,8 +42,9 @@ class _LedgerAppShellState extends State<LedgerAppShell> {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: c.surfacePage,
       body: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
@@ -96,10 +100,11 @@ class _LedgerAppShellState extends State<LedgerAppShell> {
                   onOther: () => _go(LedgerScreen.other),
                   isHoldings: _screen == LedgerScreen.holdings,
                   isDetail: _screen == LedgerScreen.detail,
+                  themeController: widget.themeController,
                 ),
               Expanded(
                 child: DecoratedBox(
-                  decoration: const BoxDecoration(color: Colors.white),
+                  decoration: BoxDecoration(color: c.surfaceCard),
                   child: body,
                 ),
               ),
@@ -110,8 +115,3 @@ class _LedgerAppShellState extends State<LedgerAppShell> {
     );
   }
 }
-
-/// Shared background matching the design's page-level ink/paper colour, used
-/// only as the outer app background — the design-tool preview card chrome
-/// (border/shadow/max-width frame) is intentionally not ported.
-const ledgerPageBackground = LedgerColors.white;

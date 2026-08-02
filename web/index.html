@@ -31,6 +31,21 @@
 
   <title>portfolio_app</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Matches LedgerPalette.light/dark surfacePage; keeps the browser chrome
+       and the first paint from flashing white before Flutter mounts. -->
+  <meta name="theme-color" content="#F4F2ED" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16150F" media="(prefers-color-scheme: dark)">
+  <style>
+    html, body {
+      background: #F4F2ED;
+    }
+    @media (prefers-color-scheme: dark) {
+      html, body {
+        background: #16150F;
+      }
+    }
+  </style>
 </head>
 <body>
   <!--

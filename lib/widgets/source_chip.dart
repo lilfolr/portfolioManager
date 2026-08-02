@@ -8,22 +8,23 @@ class SourceDotChip extends StatelessWidget {
     super.key,
     required this.label,
     required this.dotColor,
-    this.textColor = LedgerColors.textMid,
+    this.textColor,
     this.dense = false,
   });
 
   final String label;
   final Color dotColor;
-  final Color textColor;
+  final Color? textColor;
   final bool dense;
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     return Container(
       padding: EdgeInsets.fromLTRB(6, dense ? 1 : 2, 8, dense ? 1 : 2),
       decoration: BoxDecoration(
-        color: LedgerColors.surfaceTable,
-        border: Border.all(color: LedgerColors.borderSidebar),
+        color: c.surfaceTable,
+        border: Border.all(color: c.borderSidebar),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
@@ -41,7 +42,7 @@ class SourceDotChip extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: LedgerText.mono(
                 size: dense ? 10.5 : 11,
-                color: textColor,
+                color: textColor ?? c.textMid,
                 tabular: false,
               ),
             ),
@@ -60,20 +61,17 @@ class PlainTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: LedgerColors.surfaceTable,
-        border: Border.all(color: LedgerColors.borderSidebar),
+        color: c.surfaceTable,
+        border: Border.all(color: c.borderSidebar),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         label,
-        style: LedgerText.mono(
-          size: 10.5,
-          color: LedgerColors.textMid,
-          tabular: false,
-        ),
+        style: LedgerText.mono(size: 10.5, color: c.textMid, tabular: false),
       ),
     );
   }
@@ -93,15 +91,10 @@ class HeldStatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = eligible
-        ? LedgerColors.heldEligibleFg
-        : LedgerColors.heldNotYetFg;
-    final bg = eligible
-        ? LedgerColors.heldEligibleBg
-        : LedgerColors.heldNotYetBg;
-    final border = eligible
-        ? LedgerColors.heldEligibleBorder
-        : LedgerColors.heldNotYetBorder;
+    final c = LedgerColors.of(context);
+    final fg = eligible ? c.heldEligibleFg : c.heldNotYetFg;
+    final bg = eligible ? c.heldEligibleBg : c.heldNotYetBg;
+    final border = eligible ? c.heldEligibleBorder : c.heldNotYetBorder;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -135,11 +128,7 @@ class HeldStatusPill extends StatelessWidget {
         const SizedBox(height: 3),
         Text(
           heldDate,
-          style: LedgerText.mono(
-            size: 10,
-            color: LedgerColors.textFaint,
-            tabular: false,
-          ),
+          style: LedgerText.mono(size: 10, color: c.textFaint, tabular: false),
         ),
       ],
     );

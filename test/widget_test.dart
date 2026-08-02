@@ -5,21 +5,20 @@ import 'package:portfolio_app/format.dart';
 import 'package:portfolio_app/data/sample_data.dart';
 import 'package:portfolio_app/app_shell.dart';
 import 'package:portfolio_app/theme/ledger_theme.dart';
+import 'package:portfolio_app/theme/theme_controller.dart';
 
 /// Pumps the app shell directly, bypassing [MyApp]'s Supabase-backed
 /// [AuthGate] — these widget tests exercise the ledger UI against
 /// [SampleData], not the auth flow, and Supabase isn't initialized in the
 /// test environment.
-Widget _testApp() {
+Widget _testApp({ThemeMode mode = ThemeMode.light}) {
   return MaterialApp(
     title: 'Ledger',
     debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      useMaterial3: true,
-      scaffoldBackgroundColor: LedgerColors.white,
-      colorScheme: ColorScheme.fromSeed(seedColor: LedgerColors.link),
-    ),
-    home: const LedgerAppShell(),
+    theme: LedgerTheme.light(),
+    darkTheme: LedgerTheme.dark(),
+    themeMode: mode,
+    home: LedgerAppShell(themeController: ThemeController()),
   );
 }
 
@@ -155,6 +154,27 @@ void main() {
       expect(tester.takeException(), isNull);
 
       await tester.tap(find.text('VAS detail'));
+      await tester.pumpAndSettle();
+      expect(find.text('Vanguard Australian Shares Index ETF'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'app renders under the dark theme without layout errors or a missing '
+    'LedgerPalette extension',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1600, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(_testApp(mode: ThemeMode.dark));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('holdingsTable')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('VAS').first);
       await tester.pumpAndSettle();
       expect(find.text('Vanguard Australian Shares Index ETF'), findsOneWidget);
       expect(tester.takeException(), isNull);

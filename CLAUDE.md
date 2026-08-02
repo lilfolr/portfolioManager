@@ -188,3 +188,7 @@ are different permissions and differ by orders of magnitude in cost.
 - All amounts display in AUD, with original currency and FX rate shown for
   foreign holdings
 - Prefer explicit over inferred everywhere a tax outcome is involved
+- Every screen and component must support light and dark theme. Resolve
+  colours from the active theme (`LedgerColors.of(context)` /
+  `LedgerPalette`) — never hardcode a `Colors.*` value or literal hex,
+  and never give a colour parameter a light-only default

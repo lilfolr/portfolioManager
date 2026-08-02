@@ -99,6 +99,7 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     final filtered = _filtered;
     final sorted = _sorted(filtered);
 
@@ -139,8 +140,8 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
     final tCost = filtered.fold<double>(0, (s, h) => s + h.cost);
     final tGain = tValue - tCost;
     final tGainColor = _color
-        ? (tGain >= 0 ? LedgerColors.positive : LedgerColors.negative)
-        : LedgerColors.ink;
+        ? (tGain >= 0 ? c.positive : c.negative)
+        : c.ink;
 
     // Composition segments.
     List<CompositionSegment> segments;
@@ -155,7 +156,7 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
             label: list[i].sym,
             fullLabel: list[i].name,
             value: list[i].value,
-            color: LedgerColors.compRamp[i % LedgerColors.compRamp.length],
+            color: c.compRamp[i % c.compRamp.length],
             widthFraction: list[i].value / total,
             pctLabel: '${(list[i].value / total * 100).toStringAsFixed(1)}%',
           ),
@@ -176,7 +177,7 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
             label: e.key.replaceAll(' · SRN', ''),
             fullLabel: e.key,
             value: e.value,
-            color: LedgerColors.sourceDot(e.key),
+            color: c.sourceDot(e.key),
             widthFraction: e.value / total,
             pctLabel: '${(e.value / total * 100).toStringAsFixed(1)}%',
           ),
@@ -217,6 +218,7 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                           size: 22,
                           weight: FontWeight.w600,
                           letterSpacing: -0.33,
+                          color: c.ink,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -224,7 +226,7 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                         '9 positions · 5 source accounts · prices as at 01 Aug 2026, 16:10 AEST',
                         style: LedgerText.mono(
                           size: 12,
-                          color: LedgerColors.textMuted,
+                          color: c.textMuted,
                           tabular: false,
                         ),
                       ),
@@ -233,9 +235,12 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _ActionButton(label: 'Export CSV'),
+                      const _ActionButton(label: 'Export CSV'),
                       const SizedBox(width: 8),
-                      _ActionButton(label: 'Add transaction', primary: true),
+                      const _ActionButton(
+                        label: 'Add transaction',
+                        primary: true,
+                      ),
                     ],
                   ),
                 ],
@@ -290,10 +295,8 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
               ),
             ),
             Container(
-              decoration: const BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: LedgerColors.borderSidebar),
-                ),
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: c.borderSidebar)),
               ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -359,7 +362,7 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                     'Cost base includes brokerage and is derived from confirmed transactions only.',
                     style: LedgerText.mono(
                       size: 11,
-                      color: LedgerColors.textFaint,
+                      color: c.textFaint,
                       height: 1.6,
                       tabular: false,
                     ),
@@ -368,7 +371,7 @@ class _HoldingsScreenState extends State<HoldingsScreen> {
                     'VOO held in USD · converted at 0.6538 (01 Aug 2026); trade-date rates retained per parcel.',
                     style: LedgerText.mono(
                       size: 11,
-                      color: LedgerColors.textFaint,
+                      color: c.textFaint,
                       height: 1.6,
                       tabular: false,
                     ),
@@ -405,19 +408,14 @@ class KpiStripCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     final cards = [
-      _Kpi(
-        'TOTAL VALUE',
-        tValue,
-        '9 positions · 2,727 units',
-        LedgerColors.ink,
-        null,
-      ),
+      _Kpi('TOTAL VALUE', tValue, '9 positions · 2,727 units', c.ink, null),
       _Kpi(
         'TOTAL COST BASE',
         tCost,
         'from 38 confirmed transactions',
-        LedgerColors.ink,
+        c.ink,
         null,
       ),
       _Kpi(
@@ -431,7 +429,7 @@ class KpiStripCards extends StatelessWidget {
         'INCOME · $fy',
         '6,412.88',
         '+ 1,586.28 franking credits',
-        LedgerColors.ink,
+        c.ink,
         null,
       ),
     ];
@@ -443,8 +441,8 @@ class KpiStripCards extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: LedgerColors.surfaceSidebar,
-        border: Border.all(color: LedgerColors.borderSubtle),
+        color: c.surfaceSidebar,
+        border: Border.all(color: c.borderSubtle),
         borderRadius: BorderRadius.circular(6),
       ),
       clipBehavior: Clip.antiAlias,
@@ -462,16 +460,17 @@ class KpiStripCards extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         border: i != row.length - 1
-                            ? const Border(
-                                right: BorderSide(color: Color(0xFFECE8DF)),
-                              )
+                            ? Border(right: BorderSide(color: c.borderRow))
                             : null,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(row[i].label, style: LedgerText.eyebrow()),
+                          Text(
+                            row[i].label,
+                            style: LedgerText.eyebrow(color: c.textFaint),
+                          ),
                           const SizedBox(height: 9),
                           FittedBox(
                             fit: BoxFit.scaleDown,
@@ -507,7 +506,7 @@ class KpiStripCards extends StatelessWidget {
                             row[i].caption,
                             style: LedgerText.sans(
                               size: 11,
-                              color: LedgerColors.textMuted,
+                              color: c.textMuted,
                               height: 1.3,
                             ),
                           ),
@@ -539,15 +538,14 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     return Container(
       height: 32,
       padding: const EdgeInsets.symmetric(horizontal: 13),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: primary ? LedgerColors.ink : Colors.white,
-        border: Border.all(
-          color: primary ? LedgerColors.ink : LedgerColors.borderButton,
-        ),
+        color: primary ? c.ink : c.surfaceCard,
+        border: Border.all(color: primary ? c.ink : c.borderButton),
         borderRadius: BorderRadius.circular(5),
       ),
       child: Text(
@@ -555,7 +553,7 @@ class _ActionButton extends StatelessWidget {
         style: LedgerText.sans(
           size: 12.5,
           weight: primary ? FontWeight.w500 : FontWeight.w400,
-          color: primary ? const Color(0xFFF7F6F3) : LedgerColors.textStrong,
+          color: primary ? c.surfacePage : c.textStrong,
         ),
       ),
     );
@@ -569,9 +567,10 @@ class _SourceFilterRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: LedgerColors.borderControl),
+        border: Border.all(color: c.borderControl),
         borderRadius: BorderRadius.circular(5),
       ),
       clipBehavior: Clip.antiAlias,
@@ -588,12 +587,10 @@ class _SourceFilterRow extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: current == SampleData.sourceFilters[i].key
-                      ? LedgerColors.surfaceActive
-                      : Colors.white,
+                      ? c.surfaceActive
+                      : c.surfaceCard,
                   border: i != SampleData.sourceFilters.length - 1
-                      ? const Border(
-                          right: BorderSide(color: Color(0xFFECE8DF)),
-                        )
+                      ? Border(right: BorderSide(color: c.borderRow))
                       : null,
                 ),
                 child: Text(
@@ -601,8 +598,8 @@ class _SourceFilterRow extends StatelessWidget {
                   style: LedgerText.sans(
                     size: 12,
                     color: current == SampleData.sourceFilters[i].key
-                        ? LedgerColors.ink
-                        : LedgerColors.textMid,
+                        ? c.ink
+                        : c.textMid,
                   ),
                 ),
               ),
@@ -625,6 +622,7 @@ class _ToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -632,13 +630,13 @@ class _ToggleButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 11),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: active ? LedgerColors.surfaceActive : Colors.white,
-          border: Border.all(color: LedgerColors.borderControl),
+          color: active ? c.surfaceActive : c.surfaceCard,
+          border: Border.all(color: c.borderControl),
           borderRadius: BorderRadius.circular(5),
         ),
         child: Text(
           label,
-          style: LedgerText.sans(size: 12, color: LedgerColors.textStrong),
+          style: LedgerText.sans(size: 12, color: c.textStrong),
         ),
       ),
     );
@@ -659,6 +657,8 @@ class _HeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
+
     Widget cell(
       String label,
       double width,
@@ -680,14 +680,17 @@ class _HeaderRow extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(label, style: LedgerText.columnLabel()),
+                Text(
+                  label,
+                  style: LedgerText.columnLabel(color: c.textMuted),
+                ),
                 if (active)
                   Text(
                     desc ? ' ↓' : ' ↑',
                     style: LedgerText.mono(
                       size: 9.5,
                       weight: FontWeight.w500,
-                      color: LedgerColors.link,
+                      color: c.link,
                       tabular: false,
                     ),
                   ),
@@ -699,11 +702,9 @@ class _HeaderRow extends StatelessWidget {
     }
 
     return Container(
-      decoration: const BoxDecoration(
-        color: LedgerColors.surfaceTable,
-        border: Border(
-          bottom: BorderSide(color: LedgerColors.borderHeaderRule),
-        ),
+      decoration: BoxDecoration(
+        color: c.surfaceTable,
+        border: Border(bottom: BorderSide(color: c.borderHeaderRule)),
       ),
       child: Row(
         children: [
@@ -736,21 +737,18 @@ class _DataRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     final h = row.holding;
-    final gc = color
-        ? (h.gain >= 0 ? LedgerColors.positive : LedgerColors.negative)
-        : LedgerColors.ink;
+    final gc = color ? (h.gain >= 0 ? c.positive : c.negative) : c.ink;
 
     return Column(
       children: [
         if (row.groupHead != null)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-            decoration: const BoxDecoration(
-              color: LedgerColors.surfaceGroupHead,
-              border: Border(
-                bottom: BorderSide(color: LedgerColors.borderSubtle),
-              ),
+            decoration: BoxDecoration(
+              color: c.surfaceGroupHead,
+              border: Border(bottom: BorderSide(color: c.borderSubtle)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -760,7 +758,7 @@ class _DataRow extends StatelessWidget {
                   style: LedgerText.mono(
                     size: 10.5,
                     weight: FontWeight.w500,
-                    color: LedgerColors.textMid,
+                    color: c.textMid,
                     letterSpacing: 0.8,
                     tabular: false,
                   ),
@@ -769,7 +767,7 @@ class _DataRow extends StatelessWidget {
                   row.groupMeta!,
                   style: LedgerText.mono(
                     size: 11,
-                    color: LedgerColors.textMuted,
+                    color: c.textMuted,
                     tabular: false,
                   ),
                 ),
@@ -779,8 +777,8 @@ class _DataRow extends StatelessWidget {
         GestureDetector(
           onTap: onTap,
           child: Container(
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: LedgerColors.borderRow)),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: c.borderRow)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -801,6 +799,7 @@ class _DataRow extends StatelessWidget {
                           style: LedgerText.mono(
                             size: 12.5,
                             letterSpacing: 0.12,
+                            color: c.textStrong,
                           ),
                         ),
                         const SizedBox(width: 9),
@@ -815,6 +814,7 @@ class _DataRow extends StatelessWidget {
                                 style: LedgerText.sans(
                                   size: 12.5,
                                   height: 1.35,
+                                  color: c.textStrong,
                                 ),
                               ),
                               if (h.sub != null)
@@ -825,7 +825,7 @@ class _DataRow extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                     style: LedgerText.mono(
                                       size: 10.5,
-                                      color: LedgerColors.textFaint,
+                                      color: c.textFaint,
                                       tabular: false,
                                     ),
                                   ),
@@ -837,12 +837,12 @@ class _DataRow extends StatelessWidget {
                     ),
                   ),
                 ),
-                _num(h.units.toString(), 82),
-                _num(money(h.avgCost), 100),
-                _num(money(h.price), 92, color: LedgerColors.textMid),
-                _num(money(h.value), 124),
-                _num(signedMoney(h.gain), 128, color: gc),
-                _num(signedPct(h.gainPct), 84, color: gc, size: 12),
+                _num(c, h.units.toString(), 82),
+                _num(c, money(h.avgCost), 100),
+                _num(c, money(h.price), 92, color: c.textMid),
+                _num(c, money(h.value), 124),
+                _num(c, signedMoney(h.gain), 128, color: gc),
+                _num(c, signedPct(h.gainPct), 84, color: gc, size: 12),
                 SizedBox(
                   width: 168,
                   child: Padding(
@@ -852,7 +852,7 @@ class _DataRow extends StatelessWidget {
                     ),
                     child: SourceDotChip(
                       label: h.source,
-                      dotColor: LedgerColors.sourceDot(h.source),
+                      dotColor: c.sourceDot(h.source),
                     ),
                   ),
                 ),
@@ -861,10 +861,7 @@ class _DataRow extends StatelessWidget {
                   child: Text(
                     '›',
                     textAlign: TextAlign.center,
-                    style: LedgerText.mono(
-                      size: 13,
-                      color: const Color(0xFFBDB7A9),
-                    ),
+                    style: LedgerText.mono(size: 13, color: c.iconMuted),
                   ),
                 ),
               ],
@@ -876,9 +873,10 @@ class _DataRow extends StatelessWidget {
   }
 
   Widget _num(
+    LedgerPalette c,
     String text,
     double width, {
-    Color color = LedgerColors.textStrong,
+    Color? color,
     double size = 12.5,
   }) {
     return SizedBox(
@@ -888,7 +886,10 @@ class _DataRow extends StatelessWidget {
         child: Text(
           text,
           textAlign: TextAlign.right,
-          style: LedgerText.mono(size: size, color: color),
+          style: LedgerText.mono(
+            size: size,
+            color: color ?? c.textStrong,
+          ),
         ),
       ),
     );
@@ -918,12 +919,11 @@ class _TotalsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = LedgerColors.of(context);
     return Container(
-      decoration: const BoxDecoration(
-        color: LedgerColors.surfaceTable,
-        border: Border(
-          top: BorderSide(color: LedgerColors.borderTotalRule, width: 1.5),
-        ),
+      decoration: BoxDecoration(
+        color: c.surfaceTable,
+        border: Border(top: BorderSide(color: c.borderTotalRule, width: 1.5)),
       ),
       child: Row(
         children: [
@@ -936,7 +936,7 @@ class _TotalsRow extends StatelessWidget {
                 style: LedgerText.mono(
                   size: 11,
                   weight: FontWeight.w500,
-                  color: LedgerColors.textMid,
+                  color: c.textMid,
                   letterSpacing: 0.9,
                   tabular: false,
                 ),
@@ -953,7 +953,11 @@ class _TotalsRow extends StatelessWidget {
               child: Text(
                 tValue,
                 textAlign: TextAlign.right,
-                style: LedgerText.mono(size: 13, weight: FontWeight.w500),
+                style: LedgerText.mono(
+                  size: 13,
+                  weight: FontWeight.w500,
+                  color: c.textStrong,
+                ),
               ),
             ),
           ),
@@ -995,7 +999,7 @@ class _TotalsRow extends StatelessWidget {
                 'cost base $tCost',
                 style: LedgerText.mono(
                   size: 11,
-                  color: LedgerColors.textFaint,
+                  color: c.textFaint,
                   tabular: false,
                 ),
               ),

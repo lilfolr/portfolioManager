@@ -47,16 +47,18 @@ function Cell({
   width,
   align,
   paddingHorizontal,
+  paddingVertical = 9,
   children,
 }: {
   width: number;
   align?: 'left' | 'right';
   paddingHorizontal: number;
+  paddingVertical?: number;
   children: ReactNode;
 }) {
   return (
     <View
-      style={{ width, paddingHorizontal, paddingVertical: 9 }}
+      style={{ width, paddingHorizontal, paddingVertical }}
       className={align === 'right' ? 'items-end' : 'items-start'}
     >
       {children}
@@ -80,6 +82,13 @@ export interface LedgerTableProps<T, K extends string> {
   emptyMessage?: string;
   /** Renders a totals row beneath the data, using each column's renderTotal. */
   showTotals?: boolean;
+  /**
+   * Per-row background token class, e.g. the parcel tint a partially depleted
+   * parcel gets. Defaults to the card surface.
+   */
+  rowClassName?: (row: T) => string;
+  /** Vertical cell padding for data rows; 9 on Holdings, 10 on the detail tabs. */
+  rowPaddingVertical?: number;
   testID?: string;
 }
 
@@ -94,6 +103,8 @@ export function LedgerTable<T, K extends string>({
   sortKeyFor,
   emptyMessage,
   showTotals = false,
+  rowClassName,
+  rowPaddingVertical,
   testID,
 }: LedgerTableProps<T, K>) {
   const { width, wide } = useBreakpoint();
@@ -155,13 +166,18 @@ export function LedgerTable<T, K extends string>({
           ) : (
             rows.map((row) => {
               const body = (
-                <View className="flex-row items-center border-b border-edge-row">
+                <View
+                  className={`flex-row items-center border-b border-edge-row ${
+                    rowClassName?.(row) ?? 'bg-surface-card'
+                  }`}
+                >
                   {columns.map((column, index) => (
                     <Cell
                       key={column.key}
                       width={widthOf(column)}
                       align={column.align}
                       paddingHorizontal={padOf(column, index)}
+                      paddingVertical={rowPaddingVertical}
                     >
                       {column.render(row)}
                     </Cell>

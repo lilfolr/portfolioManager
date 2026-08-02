@@ -6,6 +6,7 @@ import { D, ZERO, divScale } from '../../domain/decimal';
 import { money, quantity, signedMoney, signedPct } from '../../domain/format';
 import { holdingValue, type Holding } from '../../domain/models';
 import { financialYearFromLabel } from '../../domain/financial-year';
+import { formatDate } from '../../domain/dates';
 import { useHoldingsScreenData } from '../../data/queries';
 import { useBreakpoint } from '../../layout/breakpoint';
 import { useFinancialYear } from '../../layout/financial-year';
@@ -22,26 +23,6 @@ import {
 import { KpiStrip, type Kpi } from './KpiStrip';
 import { SourceFilterBar } from './SourceFilterBar';
 import { filterHoldings, nextSort, sortHoldings, type SortKey } from './sort';
-
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
-function shortDate(date: Date): string {
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  return `${day} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
-}
 
 /** Port of `lib/screens/holdings_screen.dart`. */
 export function HoldingsScreen() {
@@ -104,7 +85,7 @@ export function HoldingsScreen() {
     : 'text-negative';
   const distinctAccounts = new Set(filtered.map((h) => h.accountId)).size;
   const priceDateLabel = data.latestPriceDate
-    ? `prices as at ${shortDate(data.latestPriceDate)}`
+    ? `prices as at ${formatDate(data.latestPriceDate)}`
     : 'no priced instruments yet';
   const foreignHoldings = filtered.filter((h) => h.fxSubLine);
 

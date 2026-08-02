@@ -2,7 +2,10 @@ import type { ReactElement } from 'react';
 import { render, type RenderOptions } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { DataSourceProvider, type PortfolioDataSource } from '@/src/data/data-source';
+import {
+  DataSourceProvider,
+  type PortfolioDataSource,
+} from '@/src/data/data-source';
 import { WidthOverride } from '@/src/layout/breakpoint';
 import { FinancialYearProvider } from '@/src/layout/financial-year';
 import { LastHoldingProvider } from '@/src/layout/last-holding';

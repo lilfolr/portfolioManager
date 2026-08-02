@@ -37,17 +37,6 @@ import {
  * `api.ts` directly.
  */
 
-/**
- * Parses the top bar's `'FY 2025–26'` label into the integer financial year
- * convention CLAUDE.md defines (`2026` == FY2025-26, 1 Jul 2025 - 30 Jun 2026):
- * the label's first year + 1.
- */
-export function financialYearFromLabel(label: string): number {
-  const match = /(\d{4})/.exec(label);
-  if (!match?.[1]) return new Date().getFullYear();
-  return parseInt(match[1], 10) + 1;
-}
-
 const date = (value: unknown): Date => new Date(String(value));
 const str = (value: unknown): string => String(value ?? '');
 
@@ -220,7 +209,9 @@ export async function fetchTxnsFor(args: {
     fetchEngineResult(args.instrumentId),
   ]);
 
-  const txnRows = allTxnRows.filter((t) => str(t.account_id) === args.accountId);
+  const txnRows = allTxnRows.filter(
+    (t) => str(t.account_id) === args.accountId,
+  );
   const sources = new Map(sourceRows.map((s) => [str(s.id), s]));
 
   const rowNumberByTxn = new Map<string, number>();
@@ -252,7 +243,9 @@ export async function fetchTxnsFor(args: {
       ? 'manual entry'
       : rowNumber !== undefined
         ? `${str(filename)} · row ${rowNumber}`
-        : (filename === null || filename === undefined ? '—' : str(filename));
+        : filename === null || filename === undefined
+          ? '—'
+          : str(filename);
 
     let parcelInfo: string;
     if (OPEN_TYPES.has(type)) {
@@ -310,13 +303,14 @@ export interface HoldingsScreenData {
 export async function fetchHoldingsScreenData(
   financialYear: number,
 ): Promise<HoldingsScreenData> {
-  const [holdings, accounts, incomeRows, txnRows, priceRows] = await Promise.all([
-    fetchHoldings(),
-    fetchAccountRefs(),
-    fetchIncomeSummary(),
-    fetchActiveTransactions(),
-    fetchLatestPrices(),
-  ]);
+  const [holdings, accounts, incomeRows, txnRows, priceRows] =
+    await Promise.all([
+      fetchHoldings(),
+      fetchAccountRefs(),
+      fetchIncomeSummary(),
+      fetchActiveTransactions(),
+      fetchLatestPrices(),
+    ]);
 
   let incomeTotal = ZERO;
   let frankingCreditTotal = ZERO;
@@ -385,12 +379,16 @@ export async function fetchHoldingDetail(args: {
       fetchIncomeFor(args),
     ]);
 
-  const instrument = instrumentRows.find((i) => str(i.id) === args.instrumentId);
+  const instrument = instrumentRows.find(
+    (i) => str(i.id) === args.instrumentId,
+  );
   if (!instrument) throw new Error(`instrument ${args.instrumentId} not found`);
   const account = accountRows.find((a) => str(a.id) === args.accountId);
   if (!account) throw new Error(`account ${args.accountId} not found`);
 
-  const price = priceRows.find((p) => str(p.instrument_id) === args.instrumentId);
+  const price = priceRows.find(
+    (p) => str(p.instrument_id) === args.instrumentId,
+  );
 
   const open = parcels.filter((p) => !parcelFullyDepleted(p));
   const units = open.reduce((s, p) => s.plus(p.remainingQuantity), ZERO);

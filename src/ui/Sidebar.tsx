@@ -32,7 +32,9 @@ function Brand() {
 
 function SidebarLabel({ children }: { children: string }) {
   return (
-    <Eyebrow className="px-[18px] pb-2 pt-[18px] text-faint">{children}</Eyebrow>
+    <Eyebrow className="px-[18px] pb-2 pt-[18px] text-faint">
+      {children}
+    </Eyebrow>
   );
 }
 
@@ -75,7 +77,10 @@ function NavItem({
         {symbol ? (
           <>
             <Mono className="text-[11.5px] text-strong">{symbol}</Mono>
-            <Sans numberOfLines={1} className="ml-[9px] flex-1 text-[12.5px] text-muted">
+            <Sans
+              numberOfLines={1}
+              className="ml-[9px] flex-1 text-[12.5px] text-muted"
+            >
               {label}
             </Sans>
           </>
@@ -225,7 +230,11 @@ export function Sidebar() {
         href="/capital-gains"
         selected={pathname === '/capital-gains'}
       />
-      <NavItem label="Property" href="/property" selected={pathname === '/property'} />
+      <NavItem
+        label="Property"
+        href="/property"
+        selected={pathname === '/property'}
+      />
 
       <SidebarLabel>LEDGER INPUT</SidebarLabel>
       <NavItem

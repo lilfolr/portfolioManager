@@ -37,7 +37,10 @@ export function Sans({ className, ...rest }: LedgerTextProps) {
 export function Mono({ className, ...rest }: LedgerTextProps) {
   return (
     <Text
-      className={cn('font-mono text-[12.5px] leading-[1.3] text-strong', className)}
+      className={cn(
+        'font-mono text-[12.5px] leading-[1.3] text-strong',
+        className,
+      )}
       {...rest}
     />
   );

@@ -18,7 +18,10 @@ import { supabase } from './supabase';
 export type Row = Record<string, unknown>;
 
 /** PostgREST errors are returned, not thrown; surface them as exceptions. */
-function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
+function unwrap<T>(result: {
+  data: T | null;
+  error: { message: string } | null;
+}): T {
   if (result.error) throw new Error(result.error.message);
   if (result.data === null) throw new Error('Supabase returned no data');
   return result.data;
@@ -74,7 +77,9 @@ export async function fetchActiveTransactions(
  */
 export async function fetchImportSources(): Promise<Row[]> {
   return unwrap(
-    await supabase.from('import_sources').select('id, kind, filename_or_message_id'),
+    await supabase
+      .from('import_sources')
+      .select('id, kind, filename_or_message_id'),
   );
 }
 
@@ -88,7 +93,9 @@ export async function fetchStagedRows(): Promise<Row[]> {
   );
 }
 
-export async function fetchIncomeSummary(instrumentId?: string): Promise<Row[]> {
+export async function fetchIncomeSummary(
+  instrumentId?: string,
+): Promise<Row[]> {
   let query = supabase.from('v_income_summary').select();
   if (instrumentId) query = query.eq('instrument_id', instrumentId);
   return unwrap(await query.order('payment_date'));

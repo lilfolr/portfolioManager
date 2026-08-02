@@ -65,7 +65,11 @@ describe('holding derivations', () => {
   });
 
   it('keeps full precision on fractional units', () => {
-    const h = holding({ units: D('48.36219178'), costBase: D('4000'), price: D('105.92') });
+    const h = holding({
+      units: D('48.36219178'),
+      costBase: D('4000'),
+      price: D('105.92'),
+    });
     // 48.36219178 * 105.92 -- all ten decimal places survive the multiply.
     expect(holdingValue(h).toString()).toBe('5122.5233533376');
   });
@@ -74,7 +78,9 @@ describe('holding derivations', () => {
     // The case that actually breaks under `number`: 0.1 + 0.2 !== 0.3.
     const units = [D('0.1'), D('0.2')].reduce((a, b) => a.plus(b), D(0));
     expect(units.toString()).toBe('0.3');
-    expect(holdingValue(holding({ units, price: D('3') })).toString()).toBe('0.9');
+    expect(holdingValue(holding({ units, price: D('3') })).toString()).toBe(
+      '0.9',
+    );
   });
 });
 
@@ -102,30 +108,38 @@ describe('parcel derivations', () => {
   it('treats a zero written with a scale as zero', () => {
     // PostgREST sends numeric(20,8) as text, so an exhausted parcel arrives as
     // '0.00000000', not '0'.
-    expect(parcelFullyDepleted(parcel({ remainingQuantity: D('0.00000000') }))).toBe(
+    expect(
+      parcelFullyDepleted(parcel({ remainingQuantity: D('0.00000000') })),
+    ).toBe(true);
+  });
+
+  it('computes cost base per remaining unit', () => {
+    expect(
+      parcelPerUnit(
+        parcel({ remainingQuantity: D('40'), costBase: D('3600') }),
+      ).toString(),
+    ).toBe('90');
+  });
+
+  it('returns zero per-unit for a depleted parcel instead of dividing by zero', () => {
+    expect(parcelPerUnit(parcel({ remainingQuantity: ZERO })).isZero()).toBe(
       true,
     );
   });
 
-  it('computes cost base per remaining unit', () => {
-    expect(parcelPerUnit(parcel({ remainingQuantity: D('40'), costBase: D('3600') })).toString()).toBe(
-      '90',
-    );
-  });
-
-  it('returns zero per-unit for a depleted parcel instead of dividing by zero', () => {
-    expect(parcelPerUnit(parcel({ remainingQuantity: ZERO })).isZero()).toBe(true);
-  });
-
   it('dates the 12-month mark one year after acquisition, in UTC', () => {
     const p = parcel({ acquiredDate: new Date(Date.UTC(2024, 2, 14)) });
-    expect(parcelTwelveMonthDate(p).toISOString()).toBe('2025-03-14T00:00:00.000Z');
+    expect(parcelTwelveMonthDate(p).toISOString()).toBe(
+      '2025-03-14T00:00:00.000Z',
+    );
   });
 
   it('rolls 29 February forward the way Date.UTC does', () => {
     // Documents the behaviour rather than asserting it is correct policy:
     // discount eligibility is decided by the engine, not by this date.
     const p = parcel({ acquiredDate: new Date(Date.UTC(2024, 1, 29)) });
-    expect(parcelTwelveMonthDate(p).toISOString()).toBe('2025-03-01T00:00:00.000Z');
+    expect(parcelTwelveMonthDate(p).toISOString()).toBe(
+      '2025-03-01T00:00:00.000Z',
+    );
   });
 });

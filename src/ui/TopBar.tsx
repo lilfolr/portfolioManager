@@ -32,14 +32,22 @@ export function TopBar({
       {showSearch ? (
         <View className="mr-2 h-7 w-[230px] flex-row items-center rounded-[5px] border border-edge-control px-[9px]">
           <View className="h-[9px] w-[9px] rounded-full border-[1.5px] border-faint" />
-          <Sans numberOfLines={1} className="ml-[7px] flex-1 text-[12px] text-faint">
+          <Sans
+            numberOfLines={1}
+            className="ml-[7px] flex-1 text-[12px] text-faint"
+          >
             Search symbol, parcel, txn id
           </Sans>
           <Mono className="text-[10px] text-icon-muted">/</Mono>
         </View>
       ) : null}
 
-      <Select testID="fySelect" value={fy} options={FY_OPTIONS} onChange={setFy} />
+      <Select
+        testID="fySelect"
+        value={fy}
+        options={FY_OPTIONS}
+        onChange={setFy}
+      />
     </View>
   );
 }

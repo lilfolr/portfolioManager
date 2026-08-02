@@ -1,5 +1,11 @@
 import { D } from '@/src/domain/decimal';
-import type { AccountRef, Holding, IncomeRow, Parcel, Txn } from '@/src/domain/models';
+import type {
+  AccountRef,
+  Holding,
+  IncomeRow,
+  Parcel,
+  Txn,
+} from '@/src/domain/models';
 import type { PortfolioDataSource } from '@/src/data/data-source';
 import type {
   HoldingDetailData,

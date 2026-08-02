@@ -68,7 +68,9 @@ export default function LoginScreen() {
       <View className="w-full max-w-[360px] rounded-lg border border-edge-card bg-surface-card p-7">
         <View className="flex-row items-center">
           <View className="h-6 w-6 items-center justify-center rounded-[5px] bg-ink">
-            <Mono className="font-mono-med text-[11px] text-surface-page">L</Mono>
+            <Mono className="font-mono-med text-[11px] text-surface-page">
+              L
+            </Mono>
           </View>
           <Sans className="ml-2.5 font-sans-semi text-[13px] tracking-[-0.13px] text-strong">
             Ledger
@@ -79,7 +81,9 @@ export default function LoginScreen() {
           {isSignIn ? 'Sign in' : 'Create account'}
         </Sans>
         <Sans className="mt-1 text-[12.5px] text-muted">
-          {isSignIn ? 'Sign in to view your ledger.' : 'Register to start a ledger.'}
+          {isSignIn
+            ? 'Sign in to view your ledger.'
+            : 'Register to start a ledger.'}
         </Sans>
 
         <Eyebrow className="mt-5 text-faint">EMAIL</Eyebrow>

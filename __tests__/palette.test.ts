@@ -13,7 +13,9 @@ describe('ledger palette', () => {
   it('has a non-empty hex value for every token in both themes', () => {
     const hex = /^#[0-9A-Fa-f]{6}$/;
     for (const [name, value] of Object.entries(light)) {
-      expect(`${name}=${value}`).toMatch(new RegExp(`^${name}=#[0-9A-Fa-f]{6}$`));
+      expect(`${name}=${value}`).toMatch(
+        new RegExp(`^${name}=#[0-9A-Fa-f]{6}$`),
+      );
       expect(value).toMatch(hex);
     }
     for (const value of Object.values(dark)) {

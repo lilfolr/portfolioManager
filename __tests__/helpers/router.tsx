@@ -24,9 +24,9 @@ import { setSession } from './supabase-mock';
 const mockedRepo = repository as jest.Mocked<typeof repository>;
 
 /** Points the repository at fixtures and signs a user in. */
-export function useFixtureBackend(
-  { signedIn = true }: { signedIn?: boolean } = {},
-) {
+export function useFixtureBackend({
+  signedIn = true,
+}: { signedIn?: boolean } = {}) {
   setSession(signedIn ? { user: { email: 'alice@example.com' } } : null);
   mockedRepo.fetchHoldingsScreenData.mockResolvedValue(holdingsScreenData);
   mockedRepo.fetchHoldingDetail.mockResolvedValue(holdingDetailData);
@@ -34,7 +34,26 @@ export function useFixtureBackend(
   mockedRepo.submitManualTransaction.mockResolvedValue('test-txn-id');
 }
 
-/** Renders the real route tree at `url`. Call at most once per file. */
-export function renderApp(url: string) {
-  return renderRouter('app', { initialUrl: url });
+/**
+ * Renders the real route tree at `url` and waits for the first render to
+ * settle. Call at most once per file.
+ *
+ * Two sharp edges are handled here so no test has to remember them.
+ * @testing-library/react-native v14 made `render` and `fireEvent` async, and
+ * `renderRouter` hands that promise straight back with its routing helpers
+ * assigned *onto the promise object* -- so awaiting it settles the render but
+ * loses `getPathname`. Hence: await the promise for its effect, then expose the
+ * helpers from the original handle.
+ *
+ * Forgetting either await leaves state updates unflushed, which surfaces as
+ * assertions failing against a stale tree rather than as an error.
+ */
+export async function renderApp(url: string) {
+  const handle = renderRouter('app', { initialUrl: url });
+  await handle;
+  return {
+    getPathname: () => handle.getPathname(),
+    getSearchParams: () => handle.getSearchParams(),
+    getSegments: () => handle.getSegments(),
+  };
 }

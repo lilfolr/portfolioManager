@@ -20,7 +20,8 @@ function useCrumb(): string {
   const pathname = usePathname();
   const { selected } = useLastHolding();
 
-  if (pathname === '/transactions/new') return 'Ledger input / Transaction entry';
+  if (pathname === '/transactions/new')
+    return 'Ledger input / Transaction entry';
   if (pathname.startsWith('/holdings/')) {
     return selected?.symbol
       ? `Portfolio / Holdings / ${selected.symbol}`

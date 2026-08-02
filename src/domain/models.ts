@@ -51,8 +51,7 @@ export const holdingGain = (h: Holding): Decimal =>
   holdingValue(h).minus(h.costBase);
 export const holdingGainPct = (h: Holding): Decimal =>
   div(holdingGain(h), h.costBase).times(D(100));
-export const holdingAvgCost = (h: Holding): Decimal =>
-  div(h.costBase, h.units);
+export const holdingAvgCost = (h: Holding): Decimal => div(h.costBase, h.units);
 
 /** A parcel (tax lot), as computed by the parcel engine. */
 export interface Parcel {

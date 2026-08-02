@@ -5,9 +5,9 @@ import {
   fetchHoldings,
   fetchOpenParcels,
   fetchTxnsFor,
-  financialYearFromLabel,
   submitManualTransaction,
 } from '@/src/data/repository';
+import { financialYearFromLabel } from '@/src/domain/financial-year';
 
 // The repository is pure composition over api.ts, so the wire layer is mocked
 // and the assertions are about mapping: grouping, summing, the FX sub-line,
@@ -44,8 +44,10 @@ const parcel = (over: Partial<WireParcel> = {}): WireParcel => ({
   ...over,
 });
 
-const engine = (parcels: WireParcel[], disposals: EngineResult['disposals'] = []) =>
-  ({ parcels, disposals }) as EngineResult;
+const engine = (
+  parcels: WireParcel[],
+  disposals: EngineResult['disposals'] = [],
+) => ({ parcels, disposals }) as EngineResult;
 
 beforeEach(() => {
   jest.resetAllMocks();
@@ -230,7 +232,11 @@ describe('fetchTxnsFor', () => {
       txnRow({ source_id: 'src-1' }),
     ]);
     mocked.fetchImportSources.mockResolvedValue([
-      { id: 'src-1', kind: 'csv', filename_or_message_id: 'commsec-2024-fy.csv' },
+      {
+        id: 'src-1',
+        kind: 'csv',
+        filename_or_message_id: 'commsec-2024-fy.csv',
+      },
     ]);
     mocked.fetchStagedRows.mockResolvedValue([
       {
@@ -262,32 +268,37 @@ describe('fetchTxnsFor', () => {
   });
 
   it('lists every parcel a SELL touched', async () => {
-    mocked.fetchActiveTransactions.mockResolvedValue([txnRow({ type: 'SELL' })]);
+    mocked.fetchActiveTransactions.mockResolvedValue([
+      txnRow({ type: 'SELL' }),
+    ]);
     mocked.fetchParcelsAndDisposals.mockResolvedValue(
-      engine([], [
-        {
-          id: 'd-1',
-          sellTransactionId: '00000042-0000-0000-0000-000000000000',
-          parcelId: '00000001-0000-0000-0000-000000000000',
-          sellDate: '2026-03-16',
-          quantity: '10',
-          proceeds: '1000',
-          costBaseUsed: '900',
-          gainLoss: '100',
-          discountEligible: true,
-        },
-        {
-          id: 'd-2',
-          sellTransactionId: '00000042-0000-0000-0000-000000000000',
-          parcelId: '00000002-0000-0000-0000-000000000000',
-          sellDate: '2026-03-16',
-          quantity: '5',
-          proceeds: '500',
-          costBaseUsed: '450',
-          gainLoss: '50',
-          discountEligible: false,
-        },
-      ]),
+      engine(
+        [],
+        [
+          {
+            id: 'd-1',
+            sellTransactionId: '00000042-0000-0000-0000-000000000000',
+            parcelId: '00000001-0000-0000-0000-000000000000',
+            sellDate: '2026-03-16',
+            quantity: '10',
+            proceeds: '1000',
+            costBaseUsed: '900',
+            gainLoss: '100',
+            discountEligible: true,
+          },
+          {
+            id: 'd-2',
+            sellTransactionId: '00000042-0000-0000-0000-000000000000',
+            parcelId: '00000002-0000-0000-0000-000000000000',
+            sellDate: '2026-03-16',
+            quantity: '5',
+            proceeds: '500',
+            costBaseUsed: '450',
+            gainLoss: '50',
+            discountEligible: false,
+          },
+        ],
+      ),
     );
 
     const [txn] = await fetchTxnsFor({
@@ -334,8 +345,14 @@ describe('fetchTxnsFor', () => {
 
   it('sorts newest first', async () => {
     mocked.fetchActiveTransactions.mockResolvedValue([
-      txnRow({ id: 'aaaaaaaa-0000-0000-0000-000000000000', trade_date: '2024-05-02' }),
-      txnRow({ id: 'bbbbbbbb-0000-0000-0000-000000000000', trade_date: '2026-03-16' }),
+      txnRow({
+        id: 'aaaaaaaa-0000-0000-0000-000000000000',
+        trade_date: '2024-05-02',
+      }),
+      txnRow({
+        id: 'bbbbbbbb-0000-0000-0000-000000000000',
+        trade_date: '2026-03-16',
+      }),
     ]);
     mocked.fetchParcelsAndDisposals.mockResolvedValue(engine([]));
     const txns = await fetchTxnsFor({
@@ -353,7 +370,12 @@ describe('fetchOpenParcels', () => {
   it('matches the symbol case-insensitively and scopes to the account', async () => {
     mocked.fetchParcelsAndDisposals.mockResolvedValue(
       engine([
-        parcel({ id: 'p-1', accountId: 'acc-commsec', remainingQuantity: '40', costBase: '3600' }),
+        parcel({
+          id: 'p-1',
+          accountId: 'acc-commsec',
+          remainingQuantity: '40',
+          costBase: '3600',
+        }),
         parcel({ id: 'p-2', accountId: 'acc-stake-us' }),
       ]),
     );

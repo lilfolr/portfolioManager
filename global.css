@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* The `:root` / `.dark:root` custom-property blocks are emitted by
+   `src/theme/tailwind-plugin.js` from `src/theme/palette.js`. Do not add
+   colour literals here -- palette.js is the single source of truth. */

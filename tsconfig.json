@@ -1,0 +1,31 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    // src/domain/wire.ts imports the backend engine's type contract by its
+    // Deno-style `./types.ts` specifier. The import is type-only, so Babel
+    // erases it and Metro never resolves the path -- only tsc follows it.
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "types": ["jest"],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "app/**/*",
+    "src/**/*",
+    "__tests__/**/*",
+    "*.ts",
+    "*.tsx",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
+  ],
+  // Excluding the directory keeps tsc off the Deno sources (`npm:` specifiers,
+  // `Deno.*` globals) while `types.ts` still enters the program, because
+  // TypeScript pulls imported files in regardless of include/exclude.
+  "exclude": ["node_modules", "supabase/**/*", "dist", ".expo"]
+}

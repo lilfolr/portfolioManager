@@ -3,7 +3,7 @@
 -- have something real to try to leak across the tenant boundary.
 --
 -- Alice's data is deliberately dense enough to exercise every read path the
--- Flutter client hits: two accounts, a partially-depleted parcel (FIFO
+-- client hits: two accounts, a partially-depleted parcel (FIFO
 -- SELL), a DRP, an entered distribution and a pending one, a foreign-currency
 -- holding, and a superseded transaction. See CLAUDE.md for the domain rules
 -- this stands in for.

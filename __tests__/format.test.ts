@@ -1,5 +1,26 @@
-import { D } from '@/src/domain/decimal';
+import { D, ZERO, divScale } from '@/src/domain/decimal';
 import { money, quantity, signedMoney, signedPct } from '@/src/domain/format';
+
+describe('divScale', () => {
+  // Dart's `(a / b).toDecimal(scaleOnInfinitePrecision: n)` applies the scale
+  // ONLY when the expansion does not terminate; an exact quotient keeps full
+  // precision. Rounding unconditionally would drift from the Flutter figures.
+  it('keeps an exact quotient at full precision, past the scale', () => {
+    expect(divScale(D('1'), D('32'), 4).toString()).toBe('0.03125');
+    expect(divScale(D('9946.20'), D('22'), 4).toString()).toBe('452.1');
+    expect(divScale(D('41400'), D('460'), 10).toString()).toBe('90');
+  });
+
+  it('rounds a non-terminating quotient to the given scale', () => {
+    expect(divScale(D('1'), D('3'), 4).toString()).toBe('0.3333');
+    expect(divScale(D('15206.79'), D('9946.20'), 4).toString()).toBe('1.5289');
+    expect(divScale(D('2'), D('3'), 10).toString()).toBe('0.6666666667');
+  });
+
+  it('yields zero for a zero denominator rather than throwing', () => {
+    expect(divScale(D('100'), ZERO, 4).isZero()).toBe(true);
+  });
+});
 
 // Ports of the two pure `test()` cases in `test/widget_test.dart`. Assertions
 // are unchanged -- if this file goes green, the formatters are byte-identical

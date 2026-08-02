@@ -23,6 +23,10 @@ module.exports = defineConfig([
             'No colour literals. Add a token to src/theme/palette.js and use the utility class or useLedgerColors().',
         },
       ],
+      // decimal.js exports its class as both the default and a named export.
+      // The default is the documented import and the one the engine's own
+      // decimal.ts uses, so matching it is deliberate.
+      'import/no-named-as-default': 'off',
       // Money and quantity are Decimal end to end; `number` appears only
       // inside src/domain/format.ts, at the point a figure becomes text.
       'no-restricted-globals': [

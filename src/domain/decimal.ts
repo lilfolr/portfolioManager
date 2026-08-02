@@ -1,6 +1,3 @@
-// eslint-disable-next-line import/no-named-as-default -- decimal.js exports the
-// class as both the default and a named export; the default is the documented
-// import and the one the engine's decimal.ts uses.
 import Decimal from 'decimal.js';
 
 /**
@@ -18,8 +15,10 @@ import Decimal from 'decimal.js';
  * this, so there is nothing in the Flutter source to copy here. The chosen
  * window comfortably contains `numeric(20,8)` quantities and DRP fractions.
  */
+const PRECISION = 40;
+
 Decimal.set({
-  precision: 40,
+  precision: PRECISION,
   rounding: Decimal.ROUND_HALF_UP,
   toExpNeg: -30,
   toExpPos: 40,
@@ -52,11 +51,31 @@ export function decimalFromWireOrNull(value: unknown): Decimal | null {
 }
 
 /**
- * Guarded division. Port of `_div()` in `lib/models/portfolio.dart`: a zero
- * denominator yields zero rather than throwing, and the quotient is fixed at
- * 10 decimal places, matching Dart's `scaleOnInfinitePrecision: 10`.
+ * Guarded division at an explicit scale, matching Dart's
+ * `(a / b).toDecimal(scaleOnInfinitePrecision: n)`.
+ *
+ * The subtlety worth preserving: Dart applies the scale ONLY when the division
+ * does not terminate. An exact quotient keeps its full precision, so
+ * `1/32` is `0.03125` there, not `0.0313`. A plain `toDecimalPlaces(n)` would
+ * silently round exact results and drift from the Flutter build's figures, so
+ * the quotient is tested for exactness first.
+ *
+ * A zero denominator yields zero rather than throwing, as `_div()` did.
  */
-export function div(a: Decimal, b: Decimal): Decimal {
+export function divScale(a: Decimal, b: Decimal, scale: number): Decimal {
   if (b.isZero()) return ZERO;
-  return a.div(b).toDecimalPlaces(10);
+  const quotient = a.div(b);
+  // Exactness is detected from the significant-digit count, not by
+  // multiplying back: at PRECISION significant digits `quotient.times(b)`
+  // rounds to `a` even when the division does not terminate, so that test
+  // would report every division as exact. A quotient that needed fewer than
+  // the full precision was not truncated.
+  return quotient.precision() < PRECISION
+    ? quotient
+    : quotient.toDecimalPlaces(scale);
+}
+
+/** Port of `_div()` in `lib/models/portfolio.dart` -- scale 10. */
+export function div(a: Decimal, b: Decimal): Decimal {
+  return divScale(a, b, 10);
 }

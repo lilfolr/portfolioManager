@@ -1,0 +1,23 @@
+-- Adds the 'voided' import source status, on its own so the next migration
+-- can use it.
+--
+-- Postgres permits `alter type ... add value` inside a transaction block, but
+-- refuses to let the new value be *read* in that same transaction ("unsafe use
+-- of new value of enum type"). The Supabase CLI runs each migration file in
+-- its own transaction, and 20260803000002 both defines a view that filters on
+-- 'voided' and writes it from a function -- so the value has to be committed
+-- first. Hence the one-line migration.
+--
+-- What voiding means: an import job whose rows should no longer count. The
+-- transactions it created are left exactly as they are (CLAUDE.md rule 2 --
+-- transactions are append-only and are never updated or deleted); it is
+-- v_active_transactions that stops returning them, which takes them out of the
+-- parcel engine's input set and therefore out of every derived figure.
+--
+-- This is deliberately not `superseded_by`. That column is a foreign key to
+-- the transaction that *replaced* this one, and a voided row has no
+-- replacement -- pointing it at itself would corrupt the one thing the column
+-- means. Superseding stays the mechanism for correcting a single transaction;
+-- voiding is the mechanism for discarding a whole import.
+
+alter type public.import_source_status add value if not exists 'voided';

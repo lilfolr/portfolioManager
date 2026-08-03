@@ -2,6 +2,7 @@ import { useRouter, usePathname, type Href } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 import { useSession } from '../auth/session';
+import { usePendingReviewCount } from '../data/queries';
 import { supabase } from '../data/supabase';
 import { useLastHolding } from '../layout/last-holding';
 import { SIDEBAR_WIDTH } from '../layout/breakpoint';
@@ -187,6 +188,7 @@ function UserFooter() {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const pendingReview = usePendingReviewCount();
   const { selected } = useLastHolding();
 
   const detailHref: Href = selected
@@ -241,12 +243,15 @@ export function Sidebar() {
         label="Import review"
         href="/import-review"
         selected={pathname === '/import-review'}
-        badge="7"
+        // Absent rather than zero when nothing is waiting, and absent while
+        // the count is still loading -- a stale number here would send someone
+        // to an empty queue.
+        badge={pendingReview ? String(pendingReview) : undefined}
       />
       <NavItem
         label="Import sources"
         href="/import-sources"
-        selected={pathname === '/import-sources'}
+        selected={pathname.startsWith('/import-sources')}
       />
       <NavItem
         label="Transaction entry"

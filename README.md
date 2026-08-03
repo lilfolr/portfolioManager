@@ -17,9 +17,11 @@ supabase/
   seed.sql              two local dev users for RLS testing
   functions/
     _shared/engine/      pure parcel engine (transactions[] -> parcels/disposals)
+    _shared/csv/         pure CSV import mapper (file text -> staged rows)
     parcels/             edge function wrapping the engine
+    import-csv/          edge function wrapping the mapper
   tests/
-    rls_negative.sql     tenant-isolation and append-only assertions
+    rls_negative.sql     tenant-isolation, append-only and import assertions
 ```
 
 ### Setup
@@ -44,7 +46,15 @@ via `DB_URL` in the Makefile if needed.
   plus a column-level grant).
 - **Nothing reaches the ledger unconfirmed.** The only way to create a
   transaction is `confirm_staged_row()`, a `SECURITY DEFINER` RPC. Direct
-  `INSERT` on `transactions` is revoked for clients.
+  `INSERT` on `transactions` is revoked for clients. The bulk import paths
+  (`confirm_staged_rows`, `confirm_import_source`) call it rather than
+  bypassing it, and it refuses any row whose parser left a blocking issue.
+- **An import can be undone without breaking append-only.**
+  `void_import_source()` marks the job `voided`, and `v_active_transactions`
+  excludes transactions belonging to a voided source. The transaction rows are
+  never updated or deleted — they simply stop counting, so parcels recompute
+  as if the import had not happened. `superseded_by` stays what it is: a
+  pointer to the transaction that *replaced* a specific row.
 - **Parcels and disposals are derived, never written directly.** No
   insert/update grant exists on either table for client roles.
 - **Every user-scoped table carries `user_id`** (denormalized, enforced via
@@ -54,11 +64,20 @@ via `DB_URL` in the Makefile if needed.
 
 ```
 make fn-test       # parcel engine unit tests (Dockerized Deno, no host install needed)
+make fn-check      # type-check the edge functions under Deno
 make db-test-rls   # RLS negative tests: cross-tenant isolation, anon lockout,
-                    # append-only enforcement, confirm_staged_row ownership
+                    # append-only enforcement, confirm_staged_row ownership,
+                    # the import RPCs, and voided-source exclusion
 ```
 
-Both are pure/local — no live Supabase project required beyond `make db-up`.
+All are pure/local — no live Supabase project required beyond `make db-up`.
+
+The CSV import mapper (`functions/_shared/csv`) is Deno source but its unit
+tests run under jest, so they are part of the default `make test` rather than
+sitting behind Docker like the engine's. `jest.config.js` maps the one `npm:`
+specifier it reaches; the Deno-style `./x.ts` import paths resolve as-is.
+`make fn-check` covers the thing jest cannot — that it still compiles under
+Deno, which is what the edge function actually runs.
 
 ## Client
 
@@ -103,6 +122,9 @@ app/                       expo-router routes only, no logic
   (app)/holdings           the ledger table
   (app)/holdings/[instrumentId]?accountId=…
   (app)/transactions/new   manual entry
+  (app)/import-sources     import jobs, status and void
+  (app)/import-sources/new upload → validate → stage
+  (app)/import-review?sourceId=…   the staged-row review queue
 src/
   domain/                  Decimal config, formatters, models, wire types
   data/                    supabase client, api reads, repository, query hooks

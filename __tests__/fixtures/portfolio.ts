@@ -2,8 +2,10 @@ import { D } from '@/src/domain/decimal';
 import type {
   AccountRef,
   Holding,
+  ImportJob,
   IncomeRow,
   Parcel,
+  ReviewRow,
   Txn,
 } from '@/src/domain/models';
 import type { PortfolioDataSource } from '@/src/data/data-source';
@@ -251,10 +253,128 @@ export const holdingDetailData: HoldingDetailData = {
   income: detailIncome,
 };
 
-/** The default injected data source: the Flutter tests' four fetcher overrides. */
+export const importJobs: ImportJob[] = [
+  {
+    id: 'a0000000-0000-4000-8000-000000000001',
+    kind: 'csv',
+    label: 'commsec-2024-fy.csv',
+    importedAt: new Date('2026-07-02T03:00:00Z'),
+    status: 'processed',
+    parserVersion: 'native@1',
+    rawBlobRef: 'user/a0000000-0000-4000-8000-000000000001/commsec-2024-fy.csv',
+    total: 42,
+    pending: 7,
+    confirmed: 34,
+    rejected: 1,
+    blocked: 2,
+    withIssues: 5,
+    errorMessage: null,
+  },
+  {
+    id: 'a0000000-0000-4000-8000-000000000002',
+    kind: 'csv',
+    label: 'stake-us-2024-fy.csv',
+    importedAt: new Date('2026-06-28T03:00:00Z'),
+    status: 'voided',
+    parserVersion: 'native@1',
+    rawBlobRef: 'user/a0000000-0000-4000-8000-000000000002/stake-us-2024-fy.csv',
+    total: 12,
+    pending: 0,
+    confirmed: 12,
+    rejected: 0,
+    blocked: 0,
+    withIssues: 0,
+    errorMessage: null,
+  },
+];
+
+export const reviewRows: ReviewRow[] = [
+  {
+    id: 'b0000000-0000-4000-8000-000000000001',
+    sourceId: importJobs[0]!.id,
+    rowNumber: 118,
+    status: 'pending',
+    issues: [],
+    transactionId: null,
+    raw: { type: 'BUY', trade_date: '2026-07-01', symbol: 'VAS' },
+    parsed: {
+      type: 'BUY',
+      tradeDate: '2026-07-01',
+      instrumentId: 'c0000000-0000-4000-8000-000000000001',
+      quantity: D('40'),
+      unitPrice: D('101.20'),
+      brokerage: D('19.95'),
+      currency: 'AUD',
+      externalRef: 'N123456',
+    },
+  },
+  {
+    id: 'b0000000-0000-4000-8000-000000000002',
+    sourceId: importJobs[0]!.id,
+    rowNumber: 119,
+    status: 'pending',
+    issues: [
+      {
+        code: 'duplicate_suspected',
+        field: null,
+        message: 'Matches T-3f2a91c4, already in the ledger',
+        blocking: false,
+      },
+    ],
+    transactionId: null,
+    raw: { type: 'BUY', trade_date: '2026-07-01', symbol: 'VAS' },
+    parsed: {
+      type: 'BUY',
+      tradeDate: '2026-07-01',
+      instrumentId: 'c0000000-0000-4000-8000-000000000001',
+      quantity: D('40'),
+      unitPrice: D('101.20'),
+      brokerage: D('19.95'),
+      currency: 'AUD',
+      externalRef: null,
+    },
+  },
+  {
+    id: 'b0000000-0000-4000-8000-000000000003',
+    sourceId: importJobs[0]!.id,
+    rowNumber: 120,
+    status: 'pending',
+    issues: [
+      {
+        code: 'unknown_instrument',
+        field: 'symbol',
+        message: 'ZZZ is not a known instrument',
+        blocking: true,
+      },
+    ],
+    transactionId: null,
+    raw: { type: 'BUY', trade_date: '2026-07-02', symbol: 'ZZZ' },
+    parsed: null,
+  },
+];
+
+/**
+ * The default injected data source. The import methods return fixtures and
+ * record nothing; a test that asserts on a mutation overrides the one method
+ * it cares about.
+ */
 export const fixtureDataSource: PortfolioDataSource = {
   fetchHoldingsScreenData: async () => holdingsScreenData,
   fetchHoldingDetail: async () => holdingDetailData,
   fetchOpenParcels: async () => [],
   submitManualTransaction: async () => 'test-txn-id',
+  fetchImportJobs: async () => importJobs,
+  fetchImportReview: async () => ({ rows: reviewRows, hasMore: false }),
+  startImport: async () => ({
+    importId: 'a0000000-0000-4000-8000-00000000000f',
+    storagePath: 'user/a0000000-0000-4000-8000-00000000000f/import.csv',
+    preview: {},
+  }),
+  finishImport: async () => importJobs[0]!.id,
+  abandonImport: async () => {},
+  confirmReviewRows: async (ids) => ids.length,
+  confirmWholeImport: async () => 0,
+  rejectStagedRows: async () => {},
+  rejectImportSource: async () => {},
+  voidImportSource: async () => {},
 };

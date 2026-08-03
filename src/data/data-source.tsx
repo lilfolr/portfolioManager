@@ -1,14 +1,27 @@
 import { createContext, useContext, type PropsWithChildren } from 'react';
 
 import {
+  abandonImport,
+  confirmReviewRows,
+  confirmWholeImport,
   fetchHoldingDetail,
   fetchHoldingsScreenData,
+  fetchImportJobs,
+  fetchImportReview,
   fetchOpenParcels,
+  finishImport,
+  rejectImportSource,
+  rejectStagedRows,
+  startImport,
   submitManualTransaction,
+  voidImportSource,
+  type ConfirmProgress,
   type HoldingDetailData,
   type HoldingsScreenData,
   type OpenParcel,
+  type ReviewPage,
 } from './repository';
+import type { ImportJob, StagedRowStatus } from '../domain/models';
 import type { Row } from './api';
 
 /**
@@ -37,6 +50,40 @@ export interface PortfolioDataSource {
     accountId: string;
   }): Promise<OpenParcel[]>;
   submitManualTransaction(payload: Row): Promise<string>;
+
+  // --- CSV import ---------------------------------------------------------
+  fetchImportJobs(): Promise<ImportJob[]>;
+  fetchImportReview(args: {
+    sourceId?: string;
+    status?: StagedRowStatus;
+    page?: number;
+    pageSize?: number;
+  }): Promise<ReviewPage>;
+  /** Uploads the file and returns what importing it would do. Writes nothing
+   * to the ledger. */
+  startImport(args: {
+    userId: string;
+    file: Blob;
+    filename: string;
+    accountId: string;
+    profileId?: string;
+  }): Promise<{ importId: string; storagePath: string; preview: Row }>;
+  finishImport(request: {
+    importId: string;
+    storagePath: string;
+    filename: string;
+    accountId: string;
+    profileId?: string;
+  }): Promise<string>;
+  abandonImport(storagePath: string): Promise<void>;
+  confirmReviewRows(ids: string[]): Promise<number>;
+  confirmWholeImport(
+    sourceId: string,
+    onProgress?: (progress: ConfirmProgress) => void,
+  ): Promise<number>;
+  rejectStagedRows(ids: string[]): Promise<void>;
+  rejectImportSource(sourceId: string): Promise<void>;
+  voidImportSource(sourceId: string): Promise<void>;
 }
 
 const liveDataSource: PortfolioDataSource = {
@@ -44,6 +91,16 @@ const liveDataSource: PortfolioDataSource = {
   fetchHoldingDetail,
   fetchOpenParcels,
   submitManualTransaction,
+  fetchImportJobs,
+  fetchImportReview,
+  startImport,
+  finishImport,
+  abandonImport,
+  confirmReviewRows,
+  confirmWholeImport,
+  rejectStagedRows,
+  rejectImportSource,
+  voidImportSource,
 };
 
 const DataSourceContext = createContext<PortfolioDataSource>(liveDataSource);

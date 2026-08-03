@@ -1,5 +1,1 @@
-import { NotInPass } from '@/src/ui/NotInPass';
-
-export default function Screen() {
-  return <NotInPass />;
-}
+export { ImportReviewScreen as default } from '@/src/features/import/ImportReviewScreen';

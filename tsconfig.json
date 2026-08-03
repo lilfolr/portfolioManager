@@ -12,7 +12,14 @@
     "isolatedModules": true,
     "types": ["jest"],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      // The CSV import mapper (supabase/functions/_shared/csv) is pulled into
+      // this program by its tests, and reaches the engine's Decimal config.
+      // Pointing the Deno npm: specifier at the installed package lets tsc
+      // follow it -- and, usefully, makes the typecheck fail if package.json
+      // and the engine ever pin different decimal.js versions, which CLAUDE.md
+      // warns would be "a silent cost-base bug".
+      "npm:decimal.js@10.4.3": ["./node_modules/decimal.js"]
     }
   },
   "include": [

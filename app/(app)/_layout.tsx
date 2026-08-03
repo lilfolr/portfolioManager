@@ -22,6 +22,10 @@ function useCrumb(): string {
 
   if (pathname === '/transactions/new')
     return 'Ledger input / Transaction entry';
+  if (pathname === '/import-sources/new')
+    return 'Ledger input / Import sources / New import';
+  if (pathname === '/import-sources') return 'Ledger input / Import sources';
+  if (pathname === '/import-review') return 'Ledger input / Import review';
   if (pathname.startsWith('/holdings/')) {
     return selected?.symbol
       ? `Portfolio / Holdings / ${selected.symbol}`

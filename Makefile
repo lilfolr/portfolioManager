@@ -1,9 +1,9 @@
 DB_URL ?= postgresql://postgres:postgres@127.0.0.1:54362/postgres
 DENO_IMAGE ?= denoland/deno:latest
 
-.PHONY: help install typecheck lint test format web build-web ios android \
+.PHONY: help install typecheck lint test check format web build-web ios android \
 	db-up db-down db-reset db-status db-diff db-test-rls \
-	fn-serve fn-test
+	fn-serve fn-test fn-check
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*## .*$$' $(MAKEFILE_LIST) | \
@@ -24,6 +24,11 @@ lint: ## eslint
 
 test: ## jest
 	npm test
+
+check: ## typecheck + lint + jest, the pre-push gate
+	$(MAKE) typecheck
+	$(MAKE) lint
+	$(MAKE) test
 
 format: ## prettier --write
 	npx prettier --write "app/**/*.tsx" "src/**/*.{ts,tsx,js}" "__tests__/**/*.{ts,tsx}"
@@ -72,3 +77,13 @@ fn-serve: ## Serve edge functions locally; hot-reloads on save
 fn-test: ## Run the parcel engine test suite (supabase/functions/_shared/engine)
 	docker run --rm -v "$(CURDIR)/supabase/functions:/functions" -w /functions \
 		$(DENO_IMAGE) test _shared/engine/
+
+# The CSV import mapper is Deno source but is unit tested under jest (see
+# __tests__/csv-*.test.ts and the npm: mapping in jest.config.js) so it runs in
+# the default `make test` rather than behind Docker. What jest cannot check is
+# that it still compiles under Deno itself, which is what the edge function
+# actually runs -- hence this.
+fn-check: ## Type-check the edge functions under Deno
+	docker run --rm -v "$(CURDIR)/supabase/functions:/functions" -w /functions \
+		$(DENO_IMAGE) check _shared/csv/map.ts _shared/csv/profiles/index.ts \
+		import-csv/index.ts parcels/index.ts

@@ -18,12 +18,24 @@ import { renderRouter } from 'expo-router/testing-library';
 
 import * as repository from '@/src/data/repository';
 
-import { holdingDetailData, holdingsScreenData } from '../fixtures/portfolio';
+import {
+  holdingDetailData,
+  holdingsScreenData,
+  importJobs,
+  reviewRows,
+} from '../fixtures/portfolio';
 import { setSession } from './supabase-mock';
 
 const mockedRepo = repository as jest.Mocked<typeof repository>;
 
-/** Points the repository at fixtures and signs a user in. */
+/**
+ * Points the repository at fixtures and signs a user in.
+ *
+ * The import fetchers are stubbed for every scenario, not just the import
+ * tests: the app shell's nav badge reads the pending-row count on every
+ * screen, so leaving them unset would have each route test exercising an
+ * error path it does not mean to.
+ */
 export function useFixtureBackend({
   signedIn = true,
 }: { signedIn?: boolean } = {}) {
@@ -32,6 +44,18 @@ export function useFixtureBackend({
   mockedRepo.fetchHoldingDetail.mockResolvedValue(holdingDetailData);
   mockedRepo.fetchOpenParcels.mockResolvedValue([]);
   mockedRepo.submitManualTransaction.mockResolvedValue('test-txn-id');
+
+  mockedRepo.fetchImportJobs.mockResolvedValue(importJobs);
+  mockedRepo.fetchImportReview.mockResolvedValue({
+    rows: reviewRows,
+    hasMore: false,
+  });
+  mockedRepo.confirmReviewRows.mockResolvedValue(0);
+  mockedRepo.confirmWholeImport.mockResolvedValue(0);
+  mockedRepo.rejectStagedRows.mockResolvedValue(undefined);
+  mockedRepo.rejectImportSource.mockResolvedValue(undefined);
+  mockedRepo.voidImportSource.mockResolvedValue(undefined);
+  mockedRepo.abandonImport.mockResolvedValue(undefined);
 }
 
 /**

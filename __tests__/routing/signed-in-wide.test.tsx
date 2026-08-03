@@ -5,12 +5,9 @@ import { setWideViewport } from '../helpers/viewport';
 
 /* eslint-disable @typescript-eslint/no-require-imports --
    jest.mock factories are hoisted above imports. */
-jest.mock('@/src/data/repository', () => ({
-  fetchHoldingsScreenData: jest.fn(),
-  fetchHoldingDetail: jest.fn(),
-  fetchOpenParcels: jest.fn(),
-  submitManualTransaction: jest.fn(),
-}));
+jest.mock('@/src/data/repository', () =>
+  require('../helpers/repository-mock').repositoryMock(),
+);
 jest.mock('@/src/data/supabase', () => require('../helpers/supabase-mock'));
 jest.mock(
   'react-native/Libraries/Utilities/useWindowDimensions',

@@ -7,6 +7,14 @@ module.exports = {
     // up the stylesheet. Jest has no such transform and cannot parse CSS, and
     // the import has no runtime value, so it maps to an empty module.
     '\\.css$': '<rootDir>/__tests__/helpers/style-stub.js',
+    // The CSV import mapper is Deno source (it runs inside the import-csv edge
+    // function) but it is pure, ledger-touching logic, so its tests belong in
+    // the default `npm test` run rather than behind Docker in `make fn-test`.
+    // Only the npm: specifier needs help -- Jest resolves the Deno-style `.ts`
+    // import paths as-is, because those files really are at those paths.
+    // package.json pins decimal.js to the same exact version the engine
+    // imports, which is what makes substituting it here sound.
+    '^npm:decimal\\.js@.*$': 'decimal.js',
   },
   // `helpers/` and `fixtures/` hold no tests of their own.
   testMatch: ['<rootDir>/__tests__/**/*.test.{ts,tsx}'],

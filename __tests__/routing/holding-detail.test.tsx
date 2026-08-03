@@ -10,10 +10,8 @@ import { setWideViewport } from '../helpers/viewport';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 jest.mock('@/src/data/repository', () => ({
-  fetchHoldingsScreenData: jest.fn(),
-  fetchHoldingDetail: jest.fn(),
-  fetchOpenParcels: jest.fn(),
-  submitManualTransaction: jest.fn(),
+  ...require('../helpers/repository-mock').repositoryMock(),
+  // This screen's own maths is the thing under test, so those two stay real.
   detailValue: jest.requireActual('@/src/data/repository').detailValue,
   detailGain: jest.requireActual('@/src/data/repository').detailGain,
 }));

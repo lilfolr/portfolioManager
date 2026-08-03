@@ -4,12 +4,9 @@ import { renderApp, useFixtureBackend } from '../helpers/router';
 import { setMobileViewport } from '../helpers/viewport';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
-jest.mock('@/src/data/repository', () => ({
-  fetchHoldingsScreenData: jest.fn(),
-  fetchHoldingDetail: jest.fn(),
-  fetchOpenParcels: jest.fn(),
-  submitManualTransaction: jest.fn(),
-}));
+jest.mock('@/src/data/repository', () =>
+  require('../helpers/repository-mock').repositoryMock(),
+);
 jest.mock('@/src/data/supabase', () => require('../helpers/supabase-mock'));
 jest.mock(
   'react-native/Libraries/Utilities/useWindowDimensions',
@@ -28,12 +25,20 @@ it('swaps the sidebar for the chip row below 1000px', async () => {
     expect(screen.getByTestId('mobileNavChips')).toBeOnTheScreen(),
   );
 
-  // The five chips. 'Holdings' also names the screen body, hence getAllByText.
+  // The chips. 'Holdings' also names the screen body, hence getAllByText.
   expect(screen.getAllByText('Holdings').length).toBeGreaterThan(0);
   expect(screen.getByText('VAS detail')).toBeOnTheScreen();
   expect(screen.getByText('New transaction')).toBeOnTheScreen();
   expect(screen.getByText('Income')).toBeOnTheScreen();
-  expect(screen.getByText('Review · 7')).toBeOnTheScreen();
+  expect(screen.getByText('Imports')).toBeOnTheScreen();
+
+  // The review count is real now rather than hardcoded, so it arrives with the
+  // import-jobs query rather than on first paint: 7 pending across the two
+  // fixture imports. Until it lands the chip is unnumbered, which is
+  // deliberate -- a stale count would send someone to an empty queue.
+  await waitFor(() =>
+    expect(screen.getByText('Review · 7')).toBeOnTheScreen(),
+  );
 
   // The sidebar and everything in it is gone.
   expect(screen.queryByText('PORTFOLIO')).toBeNull();

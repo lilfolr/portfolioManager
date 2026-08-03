@@ -1,6 +1,7 @@
 import { useRouter, type Href } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 
+import { usePendingReviewCount } from '../data/queries';
 import { useLastHolding } from '../layout/last-holding';
 import { Sans } from './text';
 
@@ -39,6 +40,7 @@ function Chip({
 
 export function MobileNavChips() {
   const { selected } = useLastHolding();
+  const pendingReview = usePendingReviewCount();
 
   const detailHref: Href = selected
     ? {
@@ -60,7 +62,12 @@ export function MobileNavChips() {
         <Chip label={`${selected?.symbol ?? 'VAS'} detail`} href={detailHref} />
         <Chip label="New transaction" href="/transactions/new" bold />
         <Chip label="Income" href="/income" muted />
-        <Chip label="Review · 7" href="/import-review" muted />
+        <Chip
+          label={pendingReview ? `Review · ${pendingReview}` : 'Review'}
+          href="/import-review"
+          muted
+        />
+        <Chip label="Imports" href="/import-sources" muted />
       </ScrollView>
     </View>
   );

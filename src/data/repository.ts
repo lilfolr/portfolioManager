@@ -10,21 +10,38 @@ import {
   parcelFullyDepleted,
   type AccountRef,
   type Holding,
+  type ImportJob,
+  type ImportStatus,
   type IncomeRow,
   type Parcel,
+  type ReviewRow,
+  type RowIssue,
+  type StagedRowStatus,
   type Txn,
   type TxnKind,
 } from '../domain/models';
 import type { WireDisposal, WireParcel } from '../domain/wire';
 import {
+  commitImport,
+  confirmImportSource,
+  confirmStagedRows,
   fetchAccounts,
   fetchActiveTransactions,
+  fetchImportJobs as apiFetchImportJobs,
   fetchImportSources,
   fetchIncomeSummary,
   fetchInstruments,
   fetchLatestPrices,
   fetchParcelsAndDisposals,
   fetchStagedRows,
+  fetchStagedRowsForReview,
+  importObjectPath,
+  previewImport,
+  rejectImportSource,
+  rejectStagedRows,
+  removeImportFile,
+  uploadImportFile,
+  voidImportSource,
   confirmStagedRow,
   insertManualStagedRow,
   type Row,
@@ -512,6 +529,263 @@ export async function submitManualTransaction(payload: Row): Promise<string> {
   const stagedRowId = await insertManualStagedRow(payload);
   const txn = await confirmStagedRow(stagedRowId);
   return str(txn.id);
+}
+
+// ---------------------------------------------------------------------------
+// CSV import
+// ---------------------------------------------------------------------------
+
+const int = (value: unknown): number => {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+/** `import_kind` -> `TxnKind`, the same mapping `fetchTxnsFor` uses for
+ * provenance labels. */
+const toKind = (value: unknown): TxnKind =>
+  value === 'csv' ? 'csv' : value === 'email' ? 'email' : 'manual';
+
+const toStatus = (value: unknown): ImportStatus => {
+  const text = str(value);
+  return text === 'processed' || text === 'error' || text === 'voided'
+    ? text
+    : 'pending';
+};
+
+/** Defensive: `issues` is jsonb and only our own writer fills it, but a
+ * malformed value should render as "no issues" rather than crash a screen. */
+function toIssues(value: unknown): RowIssue[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (typeof entry !== 'object' || entry === null) return [];
+    const issue = entry as Record<string, unknown>;
+    return [
+      {
+        code: str(issue.code),
+        field: issue.field === null || issue.field === undefined
+          ? null
+          : str(issue.field),
+        message: str(issue.message),
+        blocking: issue.blocking === true,
+      },
+    ];
+  });
+}
+
+function toRawPayload(value: unknown): Record<string, string> {
+  if (typeof value !== 'object' || value === null) return {};
+  const out: Record<string, string> = {};
+  for (const [key, cell] of Object.entries(value)) out[key] = str(cell);
+  return out;
+}
+
+export async function fetchImportJobs(): Promise<ImportJob[]> {
+  const rows = await apiFetchImportJobs();
+  return rows.map((row) => ({
+    id: str(row.id),
+    kind: toKind(row.kind),
+    label: row.filename_or_message_id === null ? '—' : str(row.filename_or_message_id),
+    importedAt: date(row.imported_at),
+    status: toStatus(row.status),
+    parserVersion:
+      row.parser_version === null || row.parser_version === undefined
+        ? null
+        : str(row.parser_version),
+    rawBlobRef:
+      row.raw_blob_ref === null || row.raw_blob_ref === undefined
+        ? null
+        : str(row.raw_blob_ref),
+    total: int(row.staged_total),
+    pending: int(row.staged_pending),
+    confirmed: int(row.staged_confirmed),
+    rejected: int(row.staged_rejected),
+    blocked: int(row.staged_blocked),
+    withIssues: int(row.staged_with_issues),
+    errorMessage:
+      row.error_message === null || row.error_message === undefined
+        ? null
+        : str(row.error_message),
+  }));
+}
+
+/** One page of the review queue. `hasMore` tells the caller whether to ask for
+ * the next one -- PostgREST caps a response at 1000 rows. */
+export interface ReviewPage {
+  rows: ReviewRow[];
+  hasMore: boolean;
+}
+
+export async function fetchImportReview(args: {
+  sourceId?: string;
+  status?: StagedRowStatus;
+  page?: number;
+  pageSize?: number;
+}): Promise<ReviewPage> {
+  const pageSize = args.pageSize ?? 200;
+  const page = args.page ?? 0;
+  const from = page * pageSize;
+  // Ask for one more than we need, so "is there another page" needs no count.
+  const rows = await fetchStagedRowsForReview({
+    sourceId: args.sourceId,
+    status: args.status ?? 'pending',
+    from,
+    to: from + pageSize,
+  });
+
+  return {
+    rows: rows.slice(0, pageSize).map(toReviewRow),
+    hasMore: rows.length > pageSize,
+  };
+}
+
+function toReviewRow(row: Row): ReviewRow {
+  const parsedPayload = row.parsed_payload as Record<string, unknown> | null;
+
+  return {
+    id: str(row.id),
+    sourceId: str(row.source_id),
+    rowNumber:
+      row.row_number === null || row.row_number === undefined
+        ? null
+        : int(row.row_number),
+    status: (['pending', 'confirmed', 'rejected'] as const).find(
+      (status) => status === row.status,
+    ) ?? 'pending',
+    issues: toIssues(row.issues),
+    transactionId:
+      row.transaction_id === null || row.transaction_id === undefined
+        ? null
+        : str(row.transaction_id),
+    raw: toRawPayload(row.raw_payload),
+    parsed: parsedPayload
+      ? {
+          type: str(parsedPayload.type),
+          tradeDate: str(parsedPayload.trade_date),
+          instrumentId:
+            parsedPayload.instrument_id === null ||
+            parsedPayload.instrument_id === undefined
+              ? null
+              : str(parsedPayload.instrument_id),
+          // The payload carries decimal strings on purpose; converting through
+          // Decimal here is the same boundary rule the rest of the repository
+          // follows -- never a float.
+          quantity: decimalFromWireOrNull(parsedPayload.quantity),
+          unitPrice: decimalFromWireOrNull(parsedPayload.unit_price),
+          brokerage: decimalFromWire(parsedPayload.brokerage),
+          currency: str(parsedPayload.currency || 'AUD'),
+          externalRef:
+            parsedPayload.external_ref === null ||
+            parsedPayload.external_ref === undefined
+              ? null
+              : str(parsedPayload.external_ref),
+        }
+      : null,
+  };
+}
+
+export interface ConfirmProgress {
+  confirmed: number;
+  total: number;
+}
+
+/**
+ * Confirms every confirmable row of one import, batch by batch, reporting
+ * progress as it goes.
+ *
+ * The loop lives here rather than in the RPC so a large import shows movement
+ * instead of a spinner that appears to hang, and so no single call has to
+ * finish inside one statement timeout. It stops when the server says nothing
+ * is left, or when a batch confirms nothing -- which means the remainder is
+ * blocked and looping again would never terminate.
+ */
+export async function confirmWholeImport(
+  sourceId: string,
+  onProgress?: (progress: ConfirmProgress) => void,
+): Promise<number> {
+  let confirmed = 0;
+  for (;;) {
+    const batch = await confirmImportSource(sourceId);
+    confirmed += batch.confirmed;
+    onProgress?.({ confirmed, total: confirmed + batch.remaining });
+    if (batch.remaining === 0 || batch.confirmed === 0) return confirmed;
+  }
+}
+
+export async function confirmReviewRows(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const created = await confirmStagedRows(ids);
+  return created.length;
+}
+
+export { rejectImportSource, rejectStagedRows, voidImportSource };
+
+/**
+ * Uploads a file and asks the edge function what importing it would do,
+ * without writing anything to the ledger.
+ *
+ * The upload happens first because parsing is server-side over the retained
+ * blob -- so what the preview describes is exactly what a later commit, or a
+ * reprocess after a parser fix, would read.
+ */
+export async function startImport(args: {
+  userId: string;
+  file: Blob;
+  filename: string;
+  accountId: string;
+  profileId?: string;
+}): Promise<{ importId: string; storagePath: string; preview: Row }> {
+  // Client-generated so it can name the storage folder and then be reused as
+  // the import_sources primary key, which is what makes a double-clicked
+  // commit land as one job rather than two.
+  const importId = newImportId();
+  const storagePath = importObjectPath(args.userId, importId, args.filename);
+
+  await uploadImportFile(storagePath, args.file);
+  const preview = await previewImport({
+    importId,
+    storagePath,
+    filename: args.filename,
+    accountId: args.accountId,
+    profileId: args.profileId,
+  });
+
+  return { importId, storagePath, preview };
+}
+
+export async function finishImport(request: {
+  importId: string;
+  storagePath: string;
+  filename: string;
+  accountId: string;
+  profileId?: string;
+}): Promise<string> {
+  const result = await commitImport(request);
+  return str(result.sourceId);
+}
+
+/** Abandons an upload the user did not commit, so the bucket does not collect
+ * orphans. Best effort -- a failure here must not surface as an import error. */
+export async function abandonImport(storagePath: string): Promise<void> {
+  try {
+    await removeImportFile(storagePath);
+  } catch {
+    // Nothing the user can do about it, and nothing broken if it stays.
+  }
+}
+
+function newImportId(): string {
+  const globalCrypto = globalThis.crypto as
+    | { randomUUID?: () => string }
+    | undefined;
+  if (globalCrypto?.randomUUID) return globalCrypto.randomUUID();
+  // React Native's Hermes has no randomUUID. This is an idempotency token, not
+  // a secret, so Math.random is adequate -- but it must still be a valid v4
+  // UUID because it becomes a uuid primary key.
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = (Math.random() * 16) | 0;
+    const value = char === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
 }
 
 // Re-exported so screens can build Decimals without reaching past the

@@ -52,9 +52,16 @@ select pg_temp.assert(
   (select count(*) from public.accounts where user_id = :bob::uuid) = 0,
   'alice cannot see bob''s accounts'
 );
+-- Phrased against alice's own row count rather than a literal: the seed has
+-- grown from one account to three since this was written, and a hardcoded
+-- number turned a tenancy assertion into a seed-size assertion that fails for
+-- the wrong reason (and, with ON_ERROR_STOP, took the rest of the suite with
+-- it).
 select pg_temp.assert(
-  (select count(*) from public.accounts) = 1,
-  'alice sees exactly her own account'
+  (select count(*) from public.accounts)
+    = (select count(*) from public.accounts where user_id = :alice::uuid)
+  and (select count(*) from public.accounts) > 0,
+  'alice sees exactly her own accounts and nothing else'
 );
 select pg_temp.assert(
   (select count(*) from public.transactions where user_id = :bob::uuid) = 0,
@@ -62,8 +69,10 @@ select pg_temp.assert(
 );
 -- Sanity: reference data (not user-scoped) is visible to any authenticated
 -- user, so this isn't a "nothing works" false pass.
+-- Same drift as above: the claim is "shared reference data is visible", not
+-- "the seed has exactly two instruments".
 select pg_temp.assert(
-  (select count(*) from public.instruments) = 2,
+  (select count(*) from public.instruments) > 0,
   'alice can see shared instrument reference data'
 );
 
@@ -103,18 +112,18 @@ end $$;
 --    setting superseded_by from NULL succeeds; a second time fails.
 -- ---------------------------------------------------------------------------
 
--- A correction target for the superseded_by test below. superseded_by is a
--- real FK, so it has to point at an actual row; inserted as the owner since
--- this isn't the thing under test here.
+-- The superseded_by test below needs a correction target, because
+-- superseded_by is a real FK and has to point at an actual row.
+-- d0000000-...-0002 is one of alice's seeded transactions and serves as that
+-- target. This block used to insert it here as the table owner; the seed has
+-- since grown to include it, so doing that again is a primary-key collision
+-- that aborts the suite.
 reset role;
-insert into public.transactions (
-  id, user_id, account_id, instrument_id, type, trade_date, settlement_date,
-  quantity, unit_price, brokerage, fees, currency, fx_rate_to_aud, source_id
-) values (
-  'd0000000-0000-0000-0000-000000000002', :alice::uuid,
-  'b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001',
-  'BUY', '2020-08-03', '2020-08-05', 80, 75.51, 19.95, 0, 'AUD', 1,
-  'c0000000-0000-0000-0000-000000000001'
+
+select pg_temp.assert(
+  (select count(*) from public.transactions
+    where id = 'd0000000-0000-0000-0000-000000000002') = 1,
+  'the seeded correction target for the supersede test exists'
 );
 
 select pg_temp.authenticate_as(:alice::uuid);
@@ -209,6 +218,248 @@ begin
     when others then
       raise notice 'PASS: confirm_staged_row rejects another user''s staged row';
   end;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 5. CSV import: the bulk RPCs enforce the same ownership rule, blocking
+--    issues cannot be confirmed, and voiding an import removes its
+--    transactions from the active view without touching a single row.
+-- ---------------------------------------------------------------------------
+
+reset role;
+
+-- Alice's own CSV import, with three staged rows: one clean, one carrying a
+-- blocking issue, one already confirmed against a real transaction.
+insert into public.import_sources (id, user_id, kind, filename_or_message_id, parser_version, status)
+values (
+  'e0000000-0000-0000-0000-000000000002', :alice::uuid, 'csv',
+  'alice-import.csv', 'native@1', 'pending'
+);
+
+insert into public.staged_rows (id, user_id, source_id, row_number, raw_payload, parsed_payload, issues, status)
+values
+  (
+    'f0000000-0000-0000-0000-000000000002', :alice::uuid,
+    'e0000000-0000-0000-0000-000000000002', 2, '{}'::jsonb,
+    json_build_object(
+      'account_id', 'b0000000-0000-0000-0000-000000000001',
+      'instrument_id', 'a0000000-0000-0000-0000-000000000001',
+      'type', 'BUY', 'trade_date', current_date, 'quantity', '10', 'unit_price', '5'
+    )::jsonb,
+    '[]'::jsonb, 'pending'
+  ),
+  (
+    'f0000000-0000-0000-0000-000000000003', :alice::uuid,
+    'e0000000-0000-0000-0000-000000000002', 3, '{}'::jsonb,
+    json_build_object(
+      'account_id', 'b0000000-0000-0000-0000-000000000001',
+      'instrument_id', 'a0000000-0000-0000-0000-000000000001',
+      'type', 'BUY', 'trade_date', current_date, 'quantity', '10', 'unit_price', '5'
+    )::jsonb,
+    '[{"code":"unknown_instrument","field":"symbol","message":"ZZZ","blocking":true}]'::jsonb,
+    'pending'
+  );
+
+select pg_temp.authenticate_as(:alice::uuid);
+
+-- staged_row_blocked is the predicate every confirm path shares.
+select pg_temp.assert(
+  public.staged_row_blocked('[{"blocking":true}]'::jsonb)
+    and not public.staged_row_blocked('[{"blocking":false}]'::jsonb)
+    and not public.staged_row_blocked('[]'::jsonb)
+    and not public.staged_row_blocked('null'::jsonb),
+  'staged_row_blocked reads the issues array and tolerates a malformed one'
+);
+
+-- A blocking issue must stop the row at the single write path, not just in
+-- the UI.
+do $$
+begin
+  begin
+    perform public.confirm_staged_row('f0000000-0000-0000-0000-000000000003');
+    raise exception 'FAIL: a row with a blocking issue should not confirm';
+  exception
+    when others then
+      raise notice 'PASS: confirm_staged_row refuses a row with a blocking issue';
+  end;
+end $$;
+
+-- confirm_import_source confirms the confirmable row and reports nothing left,
+-- having skipped the blocked one. If it counted blocked rows as remaining the
+-- client's progress loop would never terminate.
+do $$
+declare
+  v_confirmed integer;
+  v_remaining integer;
+begin
+  select confirmed, remaining into v_confirmed, v_remaining
+  from public.confirm_import_source('e0000000-0000-0000-0000-000000000002', 500);
+
+  perform pg_temp.assert(v_confirmed = 1, 'confirm_import_source confirmed the one confirmable row');
+  perform pg_temp.assert(v_remaining = 0, 'confirm_import_source excludes blocked rows from remaining');
+end $$;
+
+select pg_temp.assert(
+  (select count(*) from public.transactions
+    where source_id = 'e0000000-0000-0000-0000-000000000002') = 1,
+  'confirm_import_source appended exactly one transaction'
+);
+
+-- Visible before the void...
+select pg_temp.assert(
+  (select count(*) from public.v_active_transactions
+    where source_id = 'e0000000-0000-0000-0000-000000000002') = 1,
+  'an imported transaction is visible in v_active_transactions'
+);
+
+select public.void_import_source('e0000000-0000-0000-0000-000000000002');
+
+-- ...gone from the active view afterwards, which is what takes it out of the
+-- parcel engine's input set.
+select pg_temp.assert(
+  (select count(*) from public.v_active_transactions
+    where source_id = 'e0000000-0000-0000-0000-000000000002') = 0,
+  'voiding an import removes its transactions from v_active_transactions'
+);
+
+-- ...but still on the ledger. This is the whole point: append-only means a
+-- void hides a row from derived state, it never deletes or rewrites it.
+select pg_temp.assert(
+  (select count(*) from public.transactions
+    where source_id = 'e0000000-0000-0000-0000-000000000002') = 1,
+  'voiding an import deletes nothing from transactions'
+);
+select pg_temp.assert(
+  (select count(*) from public.transactions
+    where source_id = 'e0000000-0000-0000-0000-000000000002'
+      and superseded_by is not null) = 0,
+  'voiding an import does not touch superseded_by'
+);
+
+-- Remaining pending rows are rejected so they leave the review queue.
+select pg_temp.assert(
+  (select count(*) from public.staged_rows
+    where source_id = 'e0000000-0000-0000-0000-000000000002'
+      and status = 'pending') = 0,
+  'voiding an import rejects its still-pending staged rows'
+);
+
+-- import_sources stays closed to direct client writes: every status change
+-- goes through a function.
+do $$
+begin
+  begin
+    update public.import_sources set status = 'processed'
+      where id = 'e0000000-0000-0000-0000-000000000002';
+    raise exception 'FAIL: direct UPDATE on import_sources should have been rejected';
+  exception
+    when insufficient_privilege or others then
+      raise notice 'PASS: direct UPDATE on import_sources is rejected';
+  end;
+end $$;
+
+-- Every bulk entry point applies the same ownership check as the single-row
+-- one. Bob's import is off limits to Alice whichever door she tries.
+do $$
+begin
+  begin
+    perform public.void_import_source('e0000000-0000-0000-0000-000000000001');
+    raise exception 'FAIL: alice voiding bob''s import should have been rejected';
+  exception
+    when others then
+      raise notice 'PASS: void_import_source rejects another user''s import';
+  end;
+
+  begin
+    perform public.confirm_import_source('e0000000-0000-0000-0000-000000000001', 10);
+    raise exception 'FAIL: alice confirming bob''s import should have been rejected';
+  exception
+    when others then
+      raise notice 'PASS: confirm_import_source rejects another user''s import';
+  end;
+
+  begin
+    perform public.bulk_insert_staged_rows(
+      'e0000000-0000-0000-0000-000000000001', '[]'::jsonb
+    );
+    raise exception 'FAIL: alice staging into bob''s import should have been rejected';
+  exception
+    when others then
+      raise notice 'PASS: bulk_insert_staged_rows rejects another user''s import';
+  end;
+
+  begin
+    perform public.set_import_source_status(
+      'e0000000-0000-0000-0000-000000000001', 'processed', 1, null
+    );
+    raise exception 'FAIL: alice resolving bob''s import should have been rejected';
+  exception
+    when others then
+      raise notice 'PASS: set_import_source_status rejects another user''s import';
+  end;
+
+  begin
+    perform public.confirm_staged_rows(
+      array['f0000000-0000-0000-0000-000000000001']::uuid[]
+    );
+    raise exception 'FAIL: alice confirming bob''s staged row in bulk should have been rejected';
+  exception
+    when others then
+      raise notice 'PASS: confirm_staged_rows rejects another user''s staged row';
+  end;
+end $$;
+
+-- Alice cannot read Bob's dedupe keys through the shared lookup either.
+select pg_temp.assert(
+  public.active_dedupe_keys('b0000000-0000-0000-0000-000000000002'::uuid) = '{}'::jsonb
+    or not (public.active_dedupe_keys('b0000000-0000-0000-0000-000000000002'::uuid) ?| array['nonexistent']),
+  'active_dedupe_keys is scoped by RLS to the caller'
+);
+
+-- Committing the same import twice must land as one job. The client generates
+-- the id precisely so a double-clicked commit conflicts here rather than
+-- creating a twin.
+do $$
+begin
+  begin
+    insert into public.import_sources (id, user_id, kind, status)
+    values ('e0000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111'::uuid, 'csv', 'pending');
+    raise exception 'FAIL: re-inserting an import id should have been rejected';
+  exception
+    when unique_violation then
+      raise notice 'PASS: a repeated commit cannot create a second import job';
+    when others then
+      raise notice 'PASS: a repeated commit cannot create a second import job';
+  end;
+end $$;
+
+-- And re-staging a chunk that already landed is a no-op rather than a
+-- duplicate, which is what makes a retried commit safe.
+reset role;
+insert into public.import_sources (id, user_id, kind, status)
+values ('e0000000-0000-0000-0000-000000000003', :alice::uuid, 'csv', 'pending');
+select pg_temp.authenticate_as(:alice::uuid);
+
+do $$
+declare
+  v_rows jsonb := json_build_array(
+    json_build_object('row_number', 2, 'raw_payload', '{}'::jsonb, 'parsed_payload', null, 'issues', '[]'::jsonb, 'dedupe_key', 'k1')
+  )::jsonb;
+  v_first integer;
+  v_second integer;
+begin
+  v_first := public.bulk_insert_staged_rows('e0000000-0000-0000-0000-000000000003', v_rows);
+  v_second := public.bulk_insert_staged_rows('e0000000-0000-0000-0000-000000000003', v_rows);
+  perform pg_temp.assert(v_first = 1, 'bulk_insert_staged_rows stages a new chunk');
+  perform pg_temp.assert(v_second = 0, 'bulk_insert_staged_rows ignores a chunk that already landed');
+  perform pg_temp.assert(
+    (select count(*) from public.staged_rows where source_id = 'e0000000-0000-0000-0000-000000000003') = 1,
+    'a retried chunk does not duplicate staged rows'
+  );
+  perform pg_temp.assert(
+    (select parsed_payload is null from public.staged_rows where source_id = 'e0000000-0000-0000-0000-000000000003'),
+    'a json null parsed_payload is stored as SQL NULL, which confirm_staged_row tests for'
+  );
 end $$;
 
 reset role;
